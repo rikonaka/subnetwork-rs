@@ -1,14 +1,14 @@
 [package]
-name = "subnet"
+name = "subnetwork"
 version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0-only"
-description = "Return all ip addresses of a subnet"
-homepage = "https://github.com/rikonaka/subnet-rs"
-documentation = "https://docs.rs/subnet"
-repository = "https://github.com/rikonaka/subnet-rs"
+description = "Return all ip addresses of a subnetwork"
+homepage = "https://github.com/rikonaka/subnetwork-rs"
+documentation = "https://docs.rs/subnetwork"
+repository = "https://github.com/rikonaka/subnetwork-rs"
 readme = "README.md"
-keywords = ["net", "subnet"]
+keywords = ["net", "subnet", "subnetwork"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
