@@ -1,6 +1,12 @@
-# subnetwork-rs
+# subnetwork
 
-Return all ip addresses of a subnetwork.
+Returns an iterator that iterates over all subnet IPs.
+
+# Installation
+
+```bash
+cargo add subnetwork
+```
 
 # Example
 
@@ -8,17 +14,17 @@ Return all ip addresses of a subnetwork.
 use subnetwork;
 
 fn main() {
-    let ret = match subnetwork::ipv4_iter("192.168.1.0", 24) {
-        Some(ret) => ret,
+    let ips = match subnetwork::ipv4_iter("192.168.1.0", 24) {
+        Some(ips) => ips,
         None => panic!("get subnet failed"),
     };
-    for r in ret {
-        println!("{:?}", r);
+    for ip in ips {
+        println!("{:?}", ip);
     }
 }
 ```
 
-# Output
+**Output**
 
 ```bash
 192.168.1.1

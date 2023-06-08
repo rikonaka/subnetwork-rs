@@ -56,7 +56,6 @@ impl Iterator for Ipv4PoolRaw {
     type Item = Vec<u8>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.next < self.stop {
-            // let mask = 0b0000_0000_0000_0000_0000_0000_1111_1111;
             let mut ret = Vec::new();
             let subnet_b = self.address_b & self.prefix_b;
             let mut net_b = subnet_b + self.next;
@@ -78,8 +77,6 @@ impl Iterator for Ipv6PoolRaw {
     type Item = Vec<u16>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.next < self.stop {
-            // let mask =
-            //     0b0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111;
             let mut ret = Vec::new();
             let subnet_b = self.address_b & self.prefix_b;
             let mut net_b = subnet_b + self.next;
