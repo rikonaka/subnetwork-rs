@@ -4,7 +4,11 @@ version = "0.1.0"
 edition = "2021"
 license = "GPL-3.0-only"
 description = "Return all ip addresses of a subnet"
-homepage = "https://serde.rs/"
+homepage = "https://github.com/rikonaka/subnet-rs"
+documentation = "https://docs.rs/subnet"
+repository = "https://github.com/rikonaka/subnet-rs"
+readme = "README.md"
+keywords = ["net", "subnet"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
