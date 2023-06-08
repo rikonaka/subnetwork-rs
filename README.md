@@ -1,4 +1,4 @@
-# subnet-rs
+# subnetwork-rs
 
 Return all ip addresses of a subnetwork.
 
