@@ -2,12 +2,6 @@
 
 Returns an iterator that iterates over all subnet IPs.
 
-# Installation
-
-```bash
-cargo add subnetwork
-```
-
 # Example
 
 ```rust
