@@ -8,6 +8,9 @@ Returns an iterator that iterates over all subnet IPs.
 use subnetwork;
 
 fn main() {
+    let ret = subnetwork::ipv4_within_subnet("192.168.1.0/24", "192.168.1.200");
+    println!("{:?}", ret); // true
+
     let ips = match subnetwork::ipv4_iter("192.168.1.0", 24) {
         Some(ips) => ips,
         None => panic!("get subnet failed"),
