@@ -236,82 +236,118 @@ fn ipv6_work(tmp_address: Ipv6Addr, prefix: usize) -> (u128, u128, u128, u128) {
     (address_b, prefix_b, next, stop)
 }
 
-/// address example: 192.168.1.0
-/// prefix example: 24
+/// Returns an IPv4 subnet iterator of type Vec<u8>.
 pub fn ipv4_iter_raw(address: &str, prefix: usize) -> Option<Ipv4PoolRaw> {
-    let tmp_address: Ipv4Addr = address.parse().unwrap();
-    let (address_b, prefix_b, next, stop) = ipv4_work(tmp_address, prefix);
-    Some(Ipv4PoolRaw {
-        address_b,
-        prefix_b,
-        next,
-        stop,
-    })
+    match address.parse() {
+        Ok(tmp_address) => {
+            let (address_b, prefix_b, next, stop) = ipv4_work(tmp_address, prefix);
+            Some(Ipv4PoolRaw {
+                address_b,
+                prefix_b,
+                next,
+                stop,
+            })
+        }
+        Err(e) => {
+            eprintln!("Error: Parse address failed -> {}", e);
+            None
+        }
+    }
 }
 
-/// address example: ::ffff:192.10.2.255
-/// prefix example: 120
+/// Returns an IPv6 subnet iterator of type Vec<u16>.
 pub fn ipv6_iter_raw(address: &str, prefix: usize) -> Option<Ipv6PoolRaw> {
-    let tmp_address: Ipv6Addr = address.parse().unwrap();
-    let (address_b, prefix_b, next, stop) = ipv6_work(tmp_address, prefix);
-    Some(Ipv6PoolRaw {
-        address_b,
-        prefix_b,
-        next,
-        stop,
-    })
+    match address.parse() {
+        Ok(tmp_address) => {
+            let (address_b, prefix_b, next, stop) = ipv6_work(tmp_address, prefix);
+            Some(Ipv6PoolRaw {
+                address_b,
+                prefix_b,
+                next,
+                stop,
+            })
+        }
+        Err(e) => {
+            eprintln!("Error: Parse address failed -> {}", e);
+            None
+        }
+    }
 }
 
-/// address example: 192.168.1.0
-/// prefix example: 24
+/// Returns an IPv4 iterator of type Ipv4Addr.
 pub fn ipv4_iter(address: &str, prefix: usize) -> Option<Ipv4Pool> {
-    let tmp_address: Ipv4Addr = address.parse().unwrap();
-    let (address_b, prefix_b, next, stop) = ipv4_work(tmp_address, prefix);
-    Some(Ipv4Pool {
-        address_b,
-        prefix_b,
-        next,
-        stop,
-    })
+    match address.parse() {
+        Ok(tmp_address) => {
+            let (address_b, prefix_b, next, stop) = ipv4_work(tmp_address, prefix);
+            Some(Ipv4Pool {
+                address_b,
+                prefix_b,
+                next,
+                stop,
+            })
+        }
+        Err(e) => {
+            eprintln!("Error: Parse address failed -> {}", e);
+            None
+        }
+    }
 }
 
-/// address example: ::ffff:192.10.2.255
-/// prefix example: 120
+/// Returns an IPv6 iterator of type Ipv6Addr.
 pub fn ipv6_iter(address: &str, prefix: usize) -> Option<Ipv6Pool> {
-    let tmp_address: Ipv6Addr = address.parse().unwrap();
-    let (address_b, prefix_b, next, stop) = ipv6_work(tmp_address, prefix);
-    Some(Ipv6Pool {
-        address_b,
-        prefix_b,
-        next,
-        stop,
-    })
+    match address.parse() {
+        Ok(tmp_address) => {
+            let (address_b, prefix_b, next, stop) = ipv6_work(tmp_address, prefix);
+            Some(Ipv6Pool {
+                address_b,
+                prefix_b,
+                next,
+                stop,
+            })
+        }
+        Err(e) => {
+            eprintln!("Error: Parse address failed -> {}", e);
+            None
+        }
+    }
 }
 
-/// address example: 192.168.1.0
-/// prefix example: 24
+/// Returns an IPv4 iterator of type String.
 pub fn ipv4_iter_string(address: &str, prefix: usize) -> Option<Ipv4PoolString> {
-    let tmp_address: Ipv4Addr = address.parse().unwrap();
-    let (address_b, prefix_b, next, stop) = ipv4_work(tmp_address, prefix);
-    Some(Ipv4PoolString {
-        address_b,
-        prefix_b,
-        next,
-        stop,
-    })
+    match address.parse() {
+        Ok(tmp_address) => {
+            let (address_b, prefix_b, next, stop) = ipv4_work(tmp_address, prefix);
+            Some(Ipv4PoolString {
+                address_b,
+                prefix_b,
+                next,
+                stop,
+            })
+        }
+        Err(e) => {
+            eprintln!("Error: Parse address failed -> {}", e);
+            None
+        }
+    }
 }
 
-/// address example: ::ffff:192.10.2.255
-/// prefix example: 120
+/// Returns an IPv6 iterator of type String.
 pub fn ipv6_iter_string(address: &str, prefix: usize) -> Option<Ipv6PoolString> {
-    let tmp_address: Ipv6Addr = address.parse().unwrap();
-    let (address_b, prefix_b, next, stop) = ipv6_work(tmp_address, prefix);
-    Some(Ipv6PoolString {
-        address_b,
-        prefix_b,
-        next,
-        stop,
-    })
+    match address.parse() {
+        Ok(tmp_address) => {
+            let (address_b, prefix_b, next, stop) = ipv6_work(tmp_address, prefix);
+            Some(Ipv6PoolString {
+                address_b,
+                prefix_b,
+                next,
+                stop,
+            })
+        }
+        Err(e) => {
+            eprintln!("Error: Parse address failed -> {}", e);
+            None
+        }
+    }
 }
 
 #[cfg(test)]
