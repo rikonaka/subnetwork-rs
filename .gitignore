@@ -12,3 +12,6 @@ Cargo.lock
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
+
+benchmark/test_ipnetwork/target
+benchmark/test_subnetwork/target
