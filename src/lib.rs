@@ -211,9 +211,9 @@ fn ipv6_process(tmp_address: Ipv6Addr, prefix: usize) -> (u128, u128, u128, u128
 }
 
 /// Returns an IPv4 subnet iterator of type Vec<u8>.
-pub fn ipv4_iter_raw(address: &str, prefix: usize) -> Option<Ipv4PoolRaw> {
-    match address.parse() {
-        Ok(tmp_address) => {
+pub fn ipv4_iter_raw(subnet_address: &str) -> Option<Ipv4PoolRaw> {
+    match ipv4_subnet_split(subnet_address) {
+        Some((tmp_address, prefix)) => {
             let (address_b, prefix_b, next, stop) = ipv4_process(tmp_address, prefix);
             Some(Ipv4PoolRaw {
                 address_b,
@@ -222,17 +222,14 @@ pub fn ipv4_iter_raw(address: &str, prefix: usize) -> Option<Ipv4PoolRaw> {
                 stop,
             })
         }
-        Err(e) => {
-            eprintln!("Error: Parse address failed -> {}", e);
-            None
-        }
+        _ => None,
     }
 }
 
 /// Returns an IPv6 subnet iterator of type Vec<u16>.
-pub fn ipv6_iter_raw(address: &str, prefix: usize) -> Option<Ipv6PoolRaw> {
-    match address.parse() {
-        Ok(tmp_address) => {
+pub fn ipv6_iter_raw(subnet_address: &str) -> Option<Ipv6PoolRaw> {
+    match ipv6_subnet_split(subnet_address) {
+        Some((tmp_address, prefix)) => {
             let (address_b, prefix_b, next, stop) = ipv6_process(tmp_address, prefix);
             Some(Ipv6PoolRaw {
                 address_b,
@@ -241,17 +238,14 @@ pub fn ipv6_iter_raw(address: &str, prefix: usize) -> Option<Ipv6PoolRaw> {
                 stop,
             })
         }
-        Err(e) => {
-            eprintln!("Error: Parse address failed -> {}", e);
-            None
-        }
+        _ => None,
     }
 }
 
 /// Returns an IPv4 iterator of type Ipv4Addr.
-pub fn ipv4_iter(address: &str, prefix: usize) -> Option<Ipv4Pool> {
-    match address.parse() {
-        Ok(tmp_address) => {
+pub fn ipv4_iter(subnet_address: &str) -> Option<Ipv4Pool> {
+    match ipv4_subnet_split(subnet_address) {
+        Some((tmp_address, prefix)) => {
             let (address_b, prefix_b, next, stop) = ipv4_process(tmp_address, prefix);
             Some(Ipv4Pool {
                 address_b,
@@ -260,17 +254,14 @@ pub fn ipv4_iter(address: &str, prefix: usize) -> Option<Ipv4Pool> {
                 stop,
             })
         }
-        Err(e) => {
-            eprintln!("Error: Parse address failed -> {}", e);
-            None
-        }
+        _ => None,
     }
 }
 
 /// Returns an IPv6 iterator of type Ipv6Addr.
-pub fn ipv6_iter(address: &str, prefix: usize) -> Option<Ipv6Pool> {
-    match address.parse() {
-        Ok(tmp_address) => {
+pub fn ipv6_iter(subnet_address: &str) -> Option<Ipv6Pool> {
+    match ipv6_subnet_split(subnet_address) {
+        Some((tmp_address, prefix)) => {
             let (address_b, prefix_b, next, stop) = ipv6_process(tmp_address, prefix);
             Some(Ipv6Pool {
                 address_b,
@@ -279,17 +270,14 @@ pub fn ipv6_iter(address: &str, prefix: usize) -> Option<Ipv6Pool> {
                 stop,
             })
         }
-        Err(e) => {
-            eprintln!("Error: Parse address failed -> {}", e);
-            None
-        }
+        _ => None,
     }
 }
 
 /// Returns an IPv4 iterator of type String.
-pub fn ipv4_iter_string(address: &str, prefix: usize) -> Option<Ipv4PoolString> {
-    match address.parse() {
-        Ok(tmp_address) => {
+pub fn ipv4_iter_string(subnet_address: &str) -> Option<Ipv4PoolString> {
+    match ipv4_subnet_split(subnet_address) {
+        Some((tmp_address, prefix)) => {
             let (address_b, prefix_b, next, stop) = ipv4_process(tmp_address, prefix);
             Some(Ipv4PoolString {
                 address_b,
@@ -298,17 +286,14 @@ pub fn ipv4_iter_string(address: &str, prefix: usize) -> Option<Ipv4PoolString> 
                 stop,
             })
         }
-        Err(e) => {
-            eprintln!("Error: Parse address failed -> {}", e);
-            None
-        }
+        _ => None,
     }
 }
 
 /// Returns an IPv6 iterator of type String.
-pub fn ipv6_iter_string(address: &str, prefix: usize) -> Option<Ipv6PoolString> {
-    match address.parse() {
-        Ok(tmp_address) => {
+pub fn ipv6_iter_string(subnet_address: &str) -> Option<Ipv6PoolString> {
+    match ipv6_subnet_split(subnet_address) {
+        Some((tmp_address, prefix)) => {
             let (address_b, prefix_b, next, stop) = ipv6_process(tmp_address, prefix);
             Some(Ipv6PoolString {
                 address_b,
@@ -317,10 +302,7 @@ pub fn ipv6_iter_string(address: &str, prefix: usize) -> Option<Ipv6PoolString> 
                 stop,
             })
         }
-        Err(e) => {
-            eprintln!("Error: Parse address failed -> {}", e);
-            None
-        }
+        _ => None,
     }
 }
 
@@ -368,40 +350,54 @@ fn ipv6_prefix_mask(prefix: usize) -> u128 {
     prefix_b
 }
 
-/// Check
-pub fn ipv4_within_subnet(subnet_address: &str, address: &str) -> bool {
-    // subnet_address: 192.168.1.0/24
-    // address: 192.168.1.22
+fn ipv4_subnet_split(subnet_address: &str) -> Option<(Ipv4Addr, usize)> {
     if subnet_address.contains("/") {
         let subnet_address_vec: Vec<&str> = subnet_address.split("/").collect();
         if subnet_address_vec.len() == 2 {
             let subnet = subnet_address_vec[0].parse().unwrap();
             let prefix: usize = subnet_address_vec[1].parse().unwrap();
-            let subnet_b = ipv4_to_u32(subnet);
-            let prefix_b = ipv4_prefix_mask(prefix);
-            let address_b = ipv4_to_u32(address.parse().unwrap());
-            if subnet_b & prefix_b == address_b & prefix_b {
-                return true;
-            }
+            return Some((subnet, prefix));
         }
+    }
+    eprintln!("Error: Wrong subnet address");
+    None
+}
+
+fn ipv6_subnet_split(subnet_address: &str) -> Option<(Ipv6Addr, usize)> {
+    if subnet_address.contains("/") {
+        let subnet_address_vec: Vec<&str> = subnet_address.split("/").collect();
+        if subnet_address_vec.len() == 2 {
+            let subnet = subnet_address_vec[0].parse().unwrap();
+            let prefix: usize = subnet_address_vec[1].parse().unwrap();
+            return Some((subnet, prefix));
+        }
+    }
+    eprintln!("Error: Wrong subnet address");
+    None
+}
+
+/// Check
+pub fn ipv4_within_subnet(subnet_address: &str, address: &str) -> bool {
+    // subnet_address: 192.168.1.0/24
+    // address: 192.168.1.22
+    let (subnet, prefix) = ipv4_subnet_split(subnet_address).unwrap();
+    let subnet_b = ipv4_to_u32(subnet);
+    let prefix_b = ipv4_prefix_mask(prefix);
+    let address_b = ipv4_to_u32(address.parse().unwrap());
+    if subnet_b & prefix_b == address_b & prefix_b {
+        return true;
     }
     false
 }
 
 /// Check
 pub fn ipv6_within_subnet(subnet_address: &str, address: &str) -> bool {
-    if subnet_address.contains("/") {
-        let subnet_address_vec: Vec<&str> = subnet_address.split("/").collect();
-        if subnet_address_vec.len() == 2 {
-            let subnet = subnet_address_vec[0].parse().unwrap();
-            let prefix: usize = subnet_address_vec[1].parse().unwrap();
-            let subnet_b = ipv6_to_u128(subnet);
-            let prefix_b = ipv6_prefix_mask(prefix);
-            let address_b = ipv6_to_u128(address.parse().unwrap());
-            if subnet_b & prefix_b == address_b & prefix_b {
-                return true;
-            }
-        }
+    let (subnet, prefix) = ipv6_subnet_split(subnet_address).unwrap();
+    let subnet_b = ipv6_to_u128(subnet);
+    let prefix_b = ipv6_prefix_mask(prefix);
+    let address_b = ipv6_to_u128(address.parse().unwrap());
+    if subnet_b & prefix_b == address_b & prefix_b {
+        return true;
     }
     false
 }
@@ -418,7 +414,7 @@ mod tests {
     }
     #[test]
     fn ipv4_pool_raw() {
-        let ret = ipv4_iter_raw("192.168.1.0", 24).unwrap();
+        let ret = ipv4_iter_raw("192.168.1.0/24").unwrap();
         // println!("{:?}", ret);
         for r in ret {
             println!("{:?}", r);
@@ -429,7 +425,7 @@ mod tests {
     }
     #[test]
     fn ipv6_pool_raw() {
-        let ret = ipv6_iter_raw("::ffff:192.10.2.255", 124).unwrap();
+        let ret = ipv6_iter_raw("::ffff:192.10.2.255/124").unwrap();
         // println!("{:?}", ret);
         for r in ret {
             println!("{:?}", r);
@@ -440,7 +436,7 @@ mod tests {
     }
     #[test]
     fn ipv4_pool() {
-        let ret = ipv4_iter("192.168.1.0", 24).unwrap();
+        let ret = ipv4_iter("192.168.1.0/24").unwrap();
         // println!("{:?}", ret);
         for r in ret {
             println!("{:?}", r);
@@ -449,7 +445,7 @@ mod tests {
     }
     #[test]
     fn ipv6_pool() {
-        let ret = ipv6_iter("::ffff:192.10.2.255", 124).unwrap();
+        let ret = ipv6_iter("::ffff:192.10.2.255/124").unwrap();
         // println!("{:?}", ret);
         for r in ret {
             println!("{:?}", r);
@@ -458,7 +454,7 @@ mod tests {
     }
     #[test]
     fn ipv4_pool_string() {
-        let ret = ipv4_iter_string("192.168.1.0", 24).unwrap();
+        let ret = ipv4_iter_string("192.168.1.0/24").unwrap();
         // println!("{:?}", ret);
         for r in ret {
             println!("{:?}", r);
@@ -467,7 +463,7 @@ mod tests {
     }
     #[test]
     fn ipv6_pool_string() {
-        let ret = ipv6_iter_string("::ffff:192.10.2.255", 124).unwrap();
+        let ret = ipv6_iter_string("::ffff:192.10.2.255/124").unwrap();
         // println!("{:?}", ret);
         for r in ret {
             println!("{:?}", r);
