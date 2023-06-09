@@ -376,7 +376,7 @@ fn ipv6_subnet_split(subnet_address: &str) -> Option<(Ipv6Addr, usize)> {
     None
 }
 
-/// Check
+/// Check if the ip is within a subnet
 pub fn ipv4_within_subnet(subnet_address: &str, address: &str) -> bool {
     // subnet_address: 192.168.1.0/24
     // address: 192.168.1.22
@@ -390,7 +390,7 @@ pub fn ipv4_within_subnet(subnet_address: &str, address: &str) -> bool {
     false
 }
 
-/// Check
+/// Check if the ip is within a subnet
 pub fn ipv6_within_subnet(subnet_address: &str, address: &str) -> bool {
     let (subnet, prefix) = ipv6_subnet_split(subnet_address).unwrap();
     let subnet_b = ipv6_to_u128(subnet);
