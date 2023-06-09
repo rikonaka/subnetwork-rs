@@ -5,22 +5,6 @@ const IPV4_LEN: usize = 32;
 const IPV6_LEN: usize = 128;
 
 #[derive(Debug)]
-pub struct Ipv4PoolRaw {
-    address_b: u32,
-    prefix_b: u32,
-    next: u32,
-    stop: u32,
-}
-
-#[derive(Debug)]
-pub struct Ipv6PoolRaw {
-    address_b: u128,
-    prefix_b: u128,
-    next: u128,
-    stop: u128,
-}
-
-#[derive(Debug)]
 pub struct Ipv4Pool {
     address_b: u32,
     prefix_b: u32,
@@ -36,56 +20,13 @@ pub struct Ipv6Pool {
     stop: u128,
 }
 
-#[derive(Debug)]
-pub struct Ipv4PoolString {
-    address_b: u32,
-    prefix_b: u32,
-    next: u32,
-    stop: u32,
-}
-
-#[derive(Debug)]
-pub struct Ipv6PoolString {
-    address_b: u128,
-    prefix_b: u128,
-    next: u128,
-    stop: u128,
-}
-
-impl Iterator for Ipv4PoolRaw {
-    type Item = Vec<u8>;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.next < self.stop {
-            let ret = ipv4_calculate(self.address_b, self.prefix_b, self.next);
-            self.next += 1;
-            Some(ret)
-        } else {
-            None
-        }
-    }
-}
-
-impl Iterator for Ipv6PoolRaw {
-    type Item = Vec<u16>;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.next < self.stop {
-            let ret = ipv6_calculate(self.address_b, self.prefix_b, self.next);
-            self.next += 1;
-            Some(ret)
-        } else {
-            None
-        }
-    }
-}
-
 impl Iterator for Ipv4Pool {
     type Item = Ipv4Addr;
     fn next(&mut self) -> Option<Self::Item> {
         if self.next < self.stop {
-            let r = ipv4_calculate(self.address_b, self.prefix_b, self.next);
-            let addr = Ipv4Addr::new(r[0], r[1], r[2], r[3]);
+            let ret = ipv4_calculate(self.address_b, self.prefix_b, self.next);
             self.next += 1;
-            Some(addr)
+            Some(ret.into())
         } else {
             None
         }
@@ -96,70 +37,25 @@ impl Iterator for Ipv6Pool {
     type Item = Ipv6Addr;
     fn next(&mut self) -> Option<Self::Item> {
         if self.next < self.stop {
-            let r = ipv6_calculate(self.address_b, self.prefix_b, self.next);
-            let addr = Ipv6Addr::new(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
+            let ret = ipv6_calculate(self.address_b, self.prefix_b, self.next);
             self.next += 1;
-            Some(addr)
+            Some(ret.into())
         } else {
             None
         }
     }
 }
 
-impl Iterator for Ipv4PoolString {
-    type Item = String;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.next < self.stop {
-            let r = ipv4_calculate(self.address_b, self.prefix_b, self.next);
-            let addr = Ipv4Addr::new(r[0], r[1], r[2], r[3]);
-            let addr_str = format!("{}", addr);
-            self.next += 1;
-            Some(addr_str)
-        } else {
-            None
-        }
-    }
-}
-
-impl Iterator for Ipv6PoolString {
-    type Item = String;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.next < self.stop {
-            let r = ipv6_calculate(self.address_b, self.prefix_b, self.next);
-            let addr = Ipv6Addr::new(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
-            let addr_str = format!("{}", addr);
-            self.next += 1;
-            Some(addr_str)
-        } else {
-            None
-        }
-    }
-}
-
-fn ipv4_calculate(address_b: u32, prefix_b: u32, next: u32) -> Vec<u8> {
-    let mut ret = Vec::new();
+fn ipv4_calculate(address_b: u32, prefix_b: u32, next: u32) -> u32 {
     let subnet_b = address_b & prefix_b;
-    let mut net_b = subnet_b + next;
-    for _ in 0..4 {
-        // ret.push((net_b & mask) as u8);
-        ret.push(net_b as u8);
-        net_b >>= 8;
-    }
-    ret.reverse();
-    ret
+    let net_b = subnet_b + next;
+    net_b
 }
 
-fn ipv6_calculate(address_b: u128, prefix_b: u128, next: u128) -> Vec<u16> {
-    let mut ret = Vec::new();
+fn ipv6_calculate(address_b: u128, prefix_b: u128, next: u128) -> u128 {
     let subnet_b = address_b & prefix_b;
-    let mut net_b = subnet_b + next;
-    for _ in 0..8 {
-        // ret.push((net_b & mask) as u8);
-        ret.push(net_b as u16);
-        net_b >>= 16;
-    }
-    ret.reverse();
-    ret
+    let net_b = subnet_b + next;
+    net_b
 }
 
 fn ipv4_process(tmp_address: Ipv4Addr, prefix: usize) -> (u32, u32, u32, u32) {
@@ -210,38 +106,6 @@ fn ipv6_process(tmp_address: Ipv6Addr, prefix: usize) -> (u128, u128, u128, u128
     (address_b, prefix_b, next, stop)
 }
 
-/// Returns an IPv4 subnet iterator of type Vec<u8>.
-pub fn ipv4_iter_raw(subnet_address: &str) -> Option<Ipv4PoolRaw> {
-    match ipv4_subnet_split(subnet_address) {
-        Some((tmp_address, prefix)) => {
-            let (address_b, prefix_b, next, stop) = ipv4_process(tmp_address, prefix);
-            Some(Ipv4PoolRaw {
-                address_b,
-                prefix_b,
-                next,
-                stop,
-            })
-        }
-        _ => None,
-    }
-}
-
-/// Returns an IPv6 subnet iterator of type Vec<u16>.
-pub fn ipv6_iter_raw(subnet_address: &str) -> Option<Ipv6PoolRaw> {
-    match ipv6_subnet_split(subnet_address) {
-        Some((tmp_address, prefix)) => {
-            let (address_b, prefix_b, next, stop) = ipv6_process(tmp_address, prefix);
-            Some(Ipv6PoolRaw {
-                address_b,
-                prefix_b,
-                next,
-                stop,
-            })
-        }
-        _ => None,
-    }
-}
-
 /// Returns an IPv4 iterator of type Ipv4Addr.
 pub fn ipv4_iter(subnet_address: &str) -> Option<Ipv4Pool> {
     match ipv4_subnet_split(subnet_address) {
@@ -264,38 +128,6 @@ pub fn ipv6_iter(subnet_address: &str) -> Option<Ipv6Pool> {
         Some((tmp_address, prefix)) => {
             let (address_b, prefix_b, next, stop) = ipv6_process(tmp_address, prefix);
             Some(Ipv6Pool {
-                address_b,
-                prefix_b,
-                next,
-                stop,
-            })
-        }
-        _ => None,
-    }
-}
-
-/// Returns an IPv4 iterator of type String.
-pub fn ipv4_iter_string(subnet_address: &str) -> Option<Ipv4PoolString> {
-    match ipv4_subnet_split(subnet_address) {
-        Some((tmp_address, prefix)) => {
-            let (address_b, prefix_b, next, stop) = ipv4_process(tmp_address, prefix);
-            Some(Ipv4PoolString {
-                address_b,
-                prefix_b,
-                next,
-                stop,
-            })
-        }
-        _ => None,
-    }
-}
-
-/// Returns an IPv6 iterator of type String.
-pub fn ipv6_iter_string(subnet_address: &str) -> Option<Ipv6PoolString> {
-    match ipv6_subnet_split(subnet_address) {
-        Some((tmp_address, prefix)) => {
-            let (address_b, prefix_b, next, stop) = ipv6_process(tmp_address, prefix);
-            Some(Ipv6PoolString {
                 address_b,
                 prefix_b,
                 next,
@@ -413,28 +245,6 @@ mod tests {
         assert!(v == vec![3, 2, 1]);
     }
     #[test]
-    fn ipv4_pool_raw() {
-        let ret = ipv4_iter_raw("192.168.1.0/24").unwrap();
-        // println!("{:?}", ret);
-        for r in ret {
-            println!("{:?}", r);
-            let addr = Ipv4Addr::new(r[0], r[1], r[2], r[3]);
-            println!("{:?}", addr);
-        }
-        assert_eq!(1, 1);
-    }
-    #[test]
-    fn ipv6_pool_raw() {
-        let ret = ipv6_iter_raw("::ffff:192.10.2.255/124").unwrap();
-        // println!("{:?}", ret);
-        for r in ret {
-            println!("{:?}", r);
-            let addr = Ipv6Addr::new(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
-            println!("{:?}", addr);
-        }
-        assert_eq!(1, 1);
-    }
-    #[test]
     fn ipv4_pool() {
         let ret = ipv4_iter("192.168.1.0/24").unwrap();
         // println!("{:?}", ret);
@@ -446,24 +256,6 @@ mod tests {
     #[test]
     fn ipv6_pool() {
         let ret = ipv6_iter("::ffff:192.10.2.255/124").unwrap();
-        // println!("{:?}", ret);
-        for r in ret {
-            println!("{:?}", r);
-        }
-        assert_eq!(1, 1);
-    }
-    #[test]
-    fn ipv4_pool_string() {
-        let ret = ipv4_iter_string("192.168.1.0/24").unwrap();
-        // println!("{:?}", ret);
-        for r in ret {
-            println!("{:?}", r);
-        }
-        assert_eq!(1, 1);
-    }
-    #[test]
-    fn ipv6_pool_string() {
-        let ret = ipv6_iter_string("::ffff:192.10.2.255/124").unwrap();
         // println!("{:?}", ret);
         for r in ret {
             println!("{:?}", r);
