@@ -6,16 +6,14 @@ const IPV6_LEN: usize = 128;
 
 #[derive(Debug)]
 pub struct Ipv4Pool {
-    address_b: u32,
-    prefix_b: u32,
+    prefix: u32,
     next: u32,
     stop: u32,
 }
 
 #[derive(Debug)]
 pub struct Ipv6Pool {
-    address_b: u128,
-    prefix_b: u128,
+    prefix: u128,
     next: u128,
     stop: u128,
 }
@@ -24,7 +22,7 @@ impl Iterator for Ipv4Pool {
     type Item = Ipv4Addr;
     fn next(&mut self) -> Option<Self::Item> {
         if self.next < self.stop {
-            let ret = ipv4_calculate(self.address_b, self.prefix_b, self.next);
+            let ret = self.prefix + self.next;
             self.next += 1;
             Some(ret.into())
         } else {
@@ -37,7 +35,7 @@ impl Iterator for Ipv6Pool {
     type Item = Ipv6Addr;
     fn next(&mut self) -> Option<Self::Item> {
         if self.next < self.stop {
-            let ret = ipv6_calculate(self.address_b, self.prefix_b, self.next);
+            let ret = self.prefix + self.next;
             self.next += 1;
             Some(ret.into())
         } else {
@@ -46,20 +44,8 @@ impl Iterator for Ipv6Pool {
     }
 }
 
-fn ipv4_calculate(address_b: u32, prefix_b: u32, next: u32) -> u32 {
-    let subnet_b = address_b & prefix_b;
-    let net_b = subnet_b + next;
-    net_b
-}
-
-fn ipv6_calculate(address_b: u128, prefix_b: u128, next: u128) -> u128 {
-    let subnet_b = address_b & prefix_b;
-    let net_b = subnet_b + next;
-    net_b
-}
-
-fn ipv4_process(tmp_address: Ipv4Addr, prefix: usize) -> (u32, u32, u32, u32) {
-    let address_vec = tmp_address.octets().to_vec();
+fn ipv4_process(address: Ipv4Addr, mask_len: usize) -> (u32, u32, u32, u32) {
+    let address_vec = address.octets().to_vec();
     let mut address_b: u32 = u32::MIN;
     for (i, v) in address_vec.iter().rev().enumerate() {
         // println!("{:?}:{:8b}", v, v);
@@ -69,21 +55,21 @@ fn ipv4_process(tmp_address: Ipv4Addr, prefix: usize) -> (u32, u32, u32, u32) {
         }
         address_b += v_clone;
     }
-    let mut prefix_b: u32 = u32::MAX;
-    for _ in 0..(IPV4_LEN - prefix) {
-        prefix_b <<= 1;
+    let mut mask_b: u32 = u32::MAX;
+    for _ in 0..(IPV4_LEN - mask_len) {
+        mask_b <<= 1;
     }
     // println!("{:32b}", address_b);
     // println!("{:32b}", prefix_b);
     // println!("{:32b}", address_b & prefix_b);
-    let exp = (IPV4_LEN - prefix) as u32;
+    let exp = (IPV4_LEN - mask_len) as u32;
     let next = NEXT_VALUE as u32;
     let stop = u32::pow(2, exp);
-    (address_b, prefix_b, next, stop)
+    (address_b, mask_b, next, stop)
 }
 
-fn ipv6_process(tmp_address: Ipv6Addr, prefix: usize) -> (u128, u128, u128, u128) {
-    let address_vec = tmp_address.segments().to_vec();
+fn ipv6_process(address: Ipv6Addr, mask_len: usize) -> (u128, u128, u128, u128) {
+    let address_vec = address.segments().to_vec();
     let mut address_b: u128 = u128::MIN;
     for (i, v) in address_vec.iter().rev().enumerate() {
         // println!("{:?}:{:8b}", v, v);
@@ -93,27 +79,27 @@ fn ipv6_process(tmp_address: Ipv6Addr, prefix: usize) -> (u128, u128, u128, u128
         }
         address_b += v_clone;
     }
-    let mut prefix_b: u128 = u128::MAX;
-    for _ in 0..(IPV6_LEN - prefix) {
-        prefix_b <<= 1;
+    let mut mask_b: u128 = u128::MAX;
+    for _ in 0..(IPV6_LEN - mask_len) {
+        mask_b <<= 1;
     }
     // println!("{:32b}", address_b);
     // println!("{:32b}", prefix_b);
     // println!("{:32b}", address_b & prefix_b);
-    let exp = (IPV6_LEN - prefix) as u32;
+    let exp = (IPV6_LEN - mask_len) as u32;
     let next = NEXT_VALUE as u128;
     let stop = u128::pow(2, exp);
-    (address_b, prefix_b, next, stop)
+    (address_b, mask_b, next, stop)
 }
 
 /// Returns an IPv4 iterator of type Ipv4Addr.
 pub fn ipv4_iter(subnet_address: &str) -> Option<Ipv4Pool> {
     match ipv4_subnet_split(subnet_address) {
         Some((tmp_address, prefix)) => {
-            let (address_b, prefix_b, next, stop) = ipv4_process(tmp_address, prefix);
+            let (address, mask, next, stop) = ipv4_process(tmp_address, prefix);
+            let prefix = address & mask;
             Some(Ipv4Pool {
-                address_b,
-                prefix_b,
+                prefix,
                 next,
                 stop,
             })
@@ -126,10 +112,10 @@ pub fn ipv4_iter(subnet_address: &str) -> Option<Ipv4Pool> {
 pub fn ipv6_iter(subnet_address: &str) -> Option<Ipv6Pool> {
     match ipv6_subnet_split(subnet_address) {
         Some((tmp_address, prefix)) => {
-            let (address_b, prefix_b, next, stop) = ipv6_process(tmp_address, prefix);
+            let (address, mask, next, stop) = ipv6_process(tmp_address, prefix);
+            let prefix = address & mask;
             Some(Ipv6Pool {
-                address_b,
-                prefix_b,
+                prefix,   
                 next,
                 stop,
             })
