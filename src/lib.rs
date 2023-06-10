@@ -1,15 +1,27 @@
-use std::{
-    net::{AddrParseError, Ipv4Addr, Ipv6Addr},
-    str::FromStr,
-};
+use std::net::{AddrParseError, Ipv4Addr, Ipv6Addr};
+use std::str::FromStr;
 
 const INIT_NEXT_VALUE: usize = 1;
 const IPV4_LEN: usize = 32;
 const IPV6_LEN: usize = 128;
 
+use std::fmt;
+
+#[derive(Debug)]
+pub struct InvalidInputError {
+    message: String,
+}
+
+impl fmt::Display for InvalidInputError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Error: invalid input [{}]", self.message)
+    }
+}
+
 #[derive(Debug)]
 pub struct Ipv4Pool {
     prefix: u32,
+    mask: u32,
     next: u32,
     stop: u32,
 }
@@ -22,6 +34,7 @@ pub struct Ipv4 {
 #[derive(Debug)]
 pub struct Ipv6Pool {
     prefix: u128,
+    mask: u128,
     next: u128,
     stop: u128,
 }
@@ -54,6 +67,176 @@ impl Iterator for Ipv6Pool {
         } else {
             None
         }
+    }
+}
+
+impl Ipv4Pool {
+    /// Returns an Ipv4 iterator over the addresses contained in the network.
+    ///
+    /// # Example
+    /// ```
+    /// use subnetwork::Ipv4Pool;
+    ///
+    /// fn main() {
+    ///     let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
+    ///     for i in ips {
+    ///         println!("{:?}", i);
+    ///     }
+    /// }
+    /// ```
+    pub fn new(address: &str) -> Result<Ipv4Pool, InvalidInputError> {
+        if address.contains("/") {
+            let address_vec: Vec<&str> = address.split("/").collect();
+            if address_vec.len() == 2 {
+                let addr: Ipv4Addr = address_vec[0].parse().unwrap();
+                let addr: u32 = addr.into();
+                let netmask: usize = address_vec[1].parse().unwrap();
+                let mut mask: u32 = u32::MAX;
+                for _ in 0..(IPV4_LEN - netmask) {
+                    mask <<= 1;
+                }
+                let exp = (IPV4_LEN - netmask) as u32;
+                let next = INIT_NEXT_VALUE as u32;
+                let stop = u32::pow(2, exp);
+                let prefix = addr & mask;
+                return Ok(Ipv4Pool {
+                    prefix,
+                    mask,
+                    next,
+                    stop,
+                });
+            }
+        }
+        Err(InvalidInputError {
+            message: address.to_string(),
+        })
+    }
+    /// Check if ip pool contains this ip.
+    ///
+    /// # Example
+    /// ```
+    /// use subnetwork::Ipv4Pool;
+    ///
+    /// fn main() {
+    ///     let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
+    ///     let ret = ips.contain("192.168.1.20").unwrap();
+    ///     println!("{:?}", ret);
+    /// }
+    /// ```
+    pub fn contain(&self, address: &str) -> Result<bool, AddrParseError> {
+        match Ipv4Addr::from_str(address) {
+            Ok(addr) => {
+                let addr: u32 = addr.into();
+                if addr & self.mask == self.prefix {
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            }
+            Err(e) => Err(e),
+        }
+    }
+    /// Returns the address of the network denoted by this `Ipv4`.
+    /// This means the lowest possible IP address inside of the network.
+    pub fn network(&self) -> Ipv4Addr {
+        self.prefix.into()
+    }
+    /// Returns the broadcasting address of this `Ipv4`.
+    /// This means the highest possible IP address inside of the network.
+    pub fn broadcast(&self) -> Ipv4Addr {
+        let biggest = !self.mask;
+        let ret = self.prefix + biggest;
+        ret.into()
+    }
+    /// Returns the number of possible host addresses in this `Ipv4`
+    pub fn size(&self) -> usize {
+        let biggest = !self.mask + 1;
+        biggest as usize
+    }
+}
+
+impl Ipv6Pool {
+    /// Returns an Ipv6 iterator over the addresses contained in the network.
+    ///
+    /// # Example
+    /// ```
+    /// use subnetwork::Ipv6Pool;
+    ///
+    /// fn main() {
+    ///     let ips = Ipv6Pool::new("::ffff:192.10.2.0/120").unwrap();
+    ///     for i in ips {
+    ///         println!("{:?}", i);
+    ///     }
+    /// }
+    /// ```
+    pub fn new(address: &str) -> Result<Ipv6Pool, InvalidInputError> {
+        if address.contains("/") {
+            let address_vec: Vec<&str> = address.split("/").collect();
+            if address_vec.len() == 2 {
+                let addr: Ipv6Addr = address_vec[0].parse().unwrap();
+                let addr: u128 = addr.into();
+                let netmask: usize = address_vec[1].parse().unwrap();
+                let mut mask: u128 = u128::MAX;
+                for _ in 0..(IPV6_LEN - netmask) {
+                    mask <<= 1;
+                }
+                let exp = (IPV6_LEN - netmask) as u32;
+                let next = INIT_NEXT_VALUE as u128;
+                let stop = u128::pow(2, exp);
+                let prefix = addr & mask;
+                return Ok(Ipv6Pool {
+                    prefix,
+                    mask,
+                    next,
+                    stop,
+                });
+            }
+        }
+        Err(InvalidInputError {
+            message: address.to_string(),
+        })
+    }
+    /// Check if ip pool contains this ip.
+    ///
+    /// # Example
+    /// ```
+    /// use subnetwork::Ipv6Pool;
+    ///
+    /// fn main() {
+    ///     let ips = Ipv6Pool::new("::ffff:192.10.2.0/120").unwrap();
+    ///     let ret = ips.contain("::ffff:192.10.2.1").unwrap();
+    ///     println!("{:?}", ret);
+    /// }
+    /// ```
+    pub fn contain(&self, address: &str) -> Result<bool, AddrParseError> {
+        match Ipv6Addr::from_str(address) {
+            Ok(addr) => {
+                let addr: u128 = addr.into();
+                if addr & self.mask == self.prefix {
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            }
+            Err(e) => Err(e),
+        }
+    }
+    /// Returns the address of the network denoted by this `Ipv4`.
+    /// This means the lowest possible IP address inside of the network.
+    pub fn network(&self) -> Ipv6Addr {
+        self.prefix.into()
+    }
+    /// Returns the broadcasting address of this `Ipv4`.
+    /// This means the highest possible IP address inside of the network.
+    pub fn broadcast(&self) -> Ipv6Addr {
+        let biggest = !self.mask;
+        let ret = self.prefix + biggest;
+        ret.into()
+    }
+    /// Returns the number of possible host addresses in this `Ipv4`
+    pub fn size(&self) -> usize {
+        let biggest = !self.mask + 1;
+        biggest as usize
     }
 }
 
@@ -91,27 +274,36 @@ impl Ipv4 {
         let next = INIT_NEXT_VALUE as u32;
         let stop = u32::pow(2, exp);
         let prefix = self.addr & mask;
-        Ipv4Pool { prefix, next, stop }
+        Ipv4Pool {
+            prefix,
+            mask,
+            next,
+            stop,
+        }
     }
-    /// Check if the ip is within a subnet,
+    /// Check if the ip is within a subnet.
     /// # Example
     /// ```
     /// use subnetwork::Ipv4;
     ///
     /// fn main() {
     ///     let ipv4 = Ipv4::new("192.168.1.1").unwrap();
-    ///     let ret = ipv4.within("192.168.1.0/24");
+    ///     let ret = ipv4.within("192.168.1.0/24").unwrap();
     ///     assert_eq!(true, ret);
     /// }
     /// ```
-    pub fn within(&self, subnet_address: &str) -> bool {
-        let (subnet, subnet_mask) = self.subnet_split(subnet_address).unwrap();
-        let new_subnet_address: u32 = subnet.into();
-        let new_subnet_mask: u32 = self.get_subnet_mask(subnet_mask);
-        if new_subnet_address & new_subnet_mask == self.addr & new_subnet_mask {
-            return true;
-        } else {
-            false
+    pub fn within(&self, subnet_address: &str) -> Result<bool, InvalidInputError> {
+        match self.subnet_split(subnet_address) {
+            Ok((subnet, subnet_mask)) => {
+                let new_subnet_address: u32 = subnet.into();
+                let new_subnet_mask: u32 = self.get_subnet_mask(subnet_mask);
+                if new_subnet_address & new_subnet_mask == self.addr & new_subnet_mask {
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            }
+            Err(e) => Err(e),
         }
     }
     /// Returns the address of the network denoted by this `Ipv4`.
@@ -150,17 +342,18 @@ impl Ipv4 {
         }
         mask
     }
-    fn subnet_split(&self, subnet_address: &str) -> Option<(Ipv4Addr, usize)> {
+    fn subnet_split(&self, subnet_address: &str) -> Result<(Ipv4Addr, usize), InvalidInputError> {
         if subnet_address.contains("/") {
             let subnet_address_vec: Vec<&str> = subnet_address.split("/").collect();
             if subnet_address_vec.len() == 2 {
                 let subnet = subnet_address_vec[0].parse().unwrap();
                 let prefix: usize = subnet_address_vec[1].parse().unwrap();
-                return Some((subnet, prefix));
+                return Ok((subnet, prefix));
             }
         }
-        eprintln!("Error: Wrong subnet address");
-        None
+        Err(InvalidInputError {
+            message: subnet_address.to_string(),
+        })
     }
 }
 
@@ -197,27 +390,36 @@ impl Ipv6 {
         let next = INIT_NEXT_VALUE as u128;
         let stop = u128::pow(2, exp);
         let prefix = self.addr & mask;
-        Ipv6Pool { prefix, next, stop }
+        Ipv6Pool {
+            prefix,
+            mask,
+            next,
+            stop,
+        }
     }
-    /// Check if the ip is within a subnet,
+    /// Check if the ip is within a subnet.
     /// # Example
     /// ```
     /// use subnetwork::Ipv6;
     ///
     /// fn main() {
     ///     let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
-    ///     let ret = ipv6.within("::ffff:192.10.2.255/120");
+    ///     let ret = ipv6.within("::ffff:192.10.2.255/120").unwrap();
     ///     assert_eq!(true, ret);
     /// }
     /// ```
-    pub fn within(&self, subnet_address: &str) -> bool {
-        let (subnet, subnet_mask) = self.subnet_split(subnet_address).unwrap();
-        let new_subnet_address: u128 = subnet.into();
-        let new_subnet_mask: u128 = self.get_subnet_mask(subnet_mask);
-        if new_subnet_address & new_subnet_mask == self.addr & new_subnet_mask {
-            return true;
-        } else {
-            false
+    pub fn within(&self, subnet_address: &str) -> Result<bool, InvalidInputError> {
+        match self.subnet_split(subnet_address) {
+            Ok((subnet, subnet_mask)) => {
+                let new_subnet_address: u128 = subnet.into();
+                let new_subnet_mask: u128 = self.get_subnet_mask(subnet_mask);
+                if new_subnet_address & new_subnet_mask == self.addr & new_subnet_mask {
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            }
+            Err(e) => Err(e),
         }
     }
     /// Returns the address of the network denoted by this `Ipv6`.
@@ -256,17 +458,18 @@ impl Ipv6 {
         }
         mask
     }
-    fn subnet_split(&self, subnet_address: &str) -> Option<(Ipv6Addr, usize)> {
+    fn subnet_split(&self, subnet_address: &str) -> Result<(Ipv6Addr, usize), InvalidInputError> {
         if subnet_address.contains("/") {
             let subnet_address_vec: Vec<&str> = subnet_address.split("/").collect();
             if subnet_address_vec.len() == 2 {
                 let subnet = subnet_address_vec[0].parse().unwrap();
                 let prefix: usize = subnet_address_vec[1].parse().unwrap();
-                return Some((subnet, prefix));
+                return Ok((subnet, prefix));
             }
         }
-        eprintln!("Error: Wrong subnet address");
-        None
+        Err(InvalidInputError {
+            message: subnet_address.to_string(),
+        })
     }
 }
 
@@ -274,7 +477,7 @@ impl Ipv6 {
 mod tests {
     use super::*;
     #[test]
-    fn ipv4_pool() {
+    fn ipv4_iter() {
         let ipv4 = Ipv4::new("192.168.1.1").unwrap();
         for i in ipv4.iter(24) {
             println!("{:?}", i);
@@ -282,7 +485,7 @@ mod tests {
         assert_eq!(1, 1);
     }
     #[test]
-    fn ipv6_pool() {
+    fn ipv6_iter() {
         let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
         for i in ipv6.iter(124) {
             println!("{:?}", i);
@@ -298,14 +501,14 @@ mod tests {
     #[test]
     fn ipv4_within_test_1() {
         let ipv4 = Ipv4::new("192.168.1.1").unwrap();
-        let ret = ipv4.within("192.168.1.0/24");
+        let ret = ipv4.within("192.168.1.0/24").unwrap();
         println!("{:?}", ret);
         assert_eq!(true, ret);
     }
     #[test]
     fn ipv4_within_test_2() {
         let ipv4 = Ipv4::new("10.8.0.22").unwrap();
-        let ret = ipv4.within("192.168.1.0/24");
+        let ret = ipv4.within("192.168.1.0/24").unwrap();
         println!("{:?}", ret);
         assert_eq!(false, ret);
     }
@@ -339,7 +542,7 @@ mod tests {
     #[test]
     fn ipv6_within_test_1() {
         let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
-        let ret = ipv6.within("::ffff:192.10.2.255/120");
+        let ret = ipv6.within("::ffff:192.10.2.255/120").unwrap();
         println!("{:?}", ret);
         assert_eq!(true, ret);
     }
@@ -362,5 +565,51 @@ mod tests {
         let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
         println!("{:?}", ipv6.size(120));
         assert_eq!(ipv6.size(120), 256);
+    }
+    // IP pool
+    #[test]
+    fn ipv4_pool() {
+        let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
+        for i in ips {
+            println!("{:?}", i);
+        }
+        assert_eq!(1, 1);
+    }
+    #[test]
+    fn ipv4_contain() {
+        let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
+        let ret = ips.contain("192.168.1.20").unwrap();
+        println!("{:?}", ret);
+        assert_eq!(ret, true);
+    }
+    #[test]
+    fn ipv4_contain_2() {
+        let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
+        let ret = ips.contain("10.8.0.20").unwrap();
+        println!("{:?}", ret);
+        assert_eq!(ret, false);
+    }
+    #[test]
+    fn ipv4_network_2() {
+        let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
+        let network = ips.network();
+        let network_2 = Ipv4Addr::new(192, 168, 1, 0);
+        println!("{:?}", network);
+        assert_eq!(network, network_2);
+    }
+    #[test]
+    fn ipv4_broadcast_2() {
+        let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
+        let broadcast = ips.broadcast();
+        let broadcast_2 = Ipv4Addr::new(192, 168, 1, 255);
+        println!("{:?}", broadcast);
+        assert_eq!(broadcast, broadcast_2);
+    }
+    #[test]
+    fn ipv4_size_2() {
+        let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
+        let size = ips.size();
+        println!("{:?}", size);
+        assert_eq!(size, 256);
     }
 }

@@ -4,6 +4,23 @@ Returns an iterator that iterates over all subnet IPs.
 
 # Example
 
+## 1
+
+```rust
+use subnetwork:Ipv4Pool;
+
+fn ipv4_pool() {
+    let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
+    for i in ips {
+        println!("{:?}", i);
+    }
+    let ret = ips.contain("192.168.1.200").unwrap();
+    println!("{:?}", ret);
+}
+```
+
+## 2
+
 ```rust
 use subnetwork::Ipv4;
 
@@ -12,12 +29,11 @@ fn main() {
     for i in ip.iter(24) {
         println!("{:?}", i);
     }
-    let ret = ip.within("192.168.1.0/24");
+    let ret = ip.within("192.168.1.0/24").unwarp();
     println!("{:?}", ret);
 }
 ```
-
-**Output**
+## Output
 
 ```bash
 192.168.1.1
