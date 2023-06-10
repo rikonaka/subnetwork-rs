@@ -16,3 +16,5 @@ Cargo.lock
 benchmark/test_ipnetwork/target
 benchmark/test_subnetwork/target
 benchmark/test_cidr/target
+
+.vscode/

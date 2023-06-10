@@ -1,8 +1,8 @@
-use subnetwork::Ipv4;
+use subnetwork::Ipv4Pool;
 
 fn main() {
-    let ret = Ipv4::new("192.168.1.1").unwrap();
-    for _ in ret.iter(24) {
+    let ret = Ipv4Pool::new("192.168.1.0/24").unwrap();
+    for _ in ret {
         // println!("{}", ip);
     }
 }
