@@ -5,9 +5,9 @@ Returns an iterator that iterates over all subnet IPs.
 # Example
 
 ```rust
-use subnetwork::Ipv4Pool;
+use subnetwork::{Ipv4, Ipv4Pool};
 
-fn main() {
+fn func_1() {
     let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
     for i in ips {
         println!("{:?}", i);
@@ -15,14 +15,8 @@ fn main() {
     let ret = ips.contain("192.168.1.200").unwrap();
     println!("{:?}", ret);
 }
-```
 
-or
-
-```rust
-use subnetwork::Ipv4;
-
-fn main() {
+fn func_2() {
     let ip = Ipv4::new("192.168.1.1").unwrap();
     for i in ip.iter(24) {
         println!("{:?}", i);
