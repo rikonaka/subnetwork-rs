@@ -335,6 +335,10 @@ impl Ipv4 {
         let biggest = u32::pow(2, exp);
         biggest as usize
     }
+    /// Returns the standard IPv4 address.
+    pub fn to_std(&self) -> Ipv4Addr {
+        self.addr.into()
+    }
     fn get_subnet_mask(&self, netmask: usize) -> u32 {
         let mut mask: u32 = u32::MAX;
         for _ in 0..(IPV4_LEN - netmask) {
@@ -450,6 +454,10 @@ impl Ipv6 {
         let exp = (IPV6_LEN - netmask) as u32;
         let biggest = u128::pow(2, exp);
         biggest as usize
+    }
+    /// Returns the standard IPv4 address.
+    pub fn to_std(&self) -> Ipv6Addr {
+        self.addr.into()
     }
     fn get_subnet_mask(&self, netmask: usize) -> u128 {
         let mut mask: u128 = u128::MAX;
