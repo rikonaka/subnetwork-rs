@@ -1,3 +1,4 @@
+//! The `subnetwork` crate provides a set of APIs to work with IP CIDRs in Rust.
 use std::net::{AddrParseError, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
