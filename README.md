@@ -4,10 +4,8 @@ Returns an iterator that iterates over all subnet IPs.
 
 # Example
 
-## 1
-
 ```rust
-use subnetwork:Ipv4Pool;
+use subnetwork::Ipv4Pool;
 
 fn ipv4_pool() {
     let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
@@ -19,7 +17,7 @@ fn ipv4_pool() {
 }
 ```
 
-## 2
+or
 
 ```rust
 use subnetwork::Ipv4;
@@ -33,7 +31,7 @@ fn main() {
     println!("{:?}", ret);
 }
 ```
-## Output
+**Output**
 
 ```bash
 192.168.1.1
