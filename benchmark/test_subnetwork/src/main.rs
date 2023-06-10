@@ -1,8 +1,8 @@
-use subnetwork::ipv4_iter;
+use subnetwork::Ipv4;
 
 fn main() {
-    let ret = ipv4_iter("192.168.1.0/16").unwrap();
-    for _ in ret {
+    let ret = Ipv4::new("192.168.1.1").unwrap();
+    for _ in ret.iter(24) {
         // println!("{}", ip);
     }
 }
