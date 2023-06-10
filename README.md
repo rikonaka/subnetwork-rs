@@ -7,7 +7,7 @@ Returns an iterator that iterates over all subnet IPs.
 ```rust
 use subnetwork::Ipv4Pool;
 
-fn ipv4_pool() {
+fn main() {
     let ips = Ipv4Pool::new("192.168.1.1/24").unwrap();
     for i in ips {
         println!("{:?}", i);
