@@ -41,3 +41,7 @@ fn func_2() {
 192.168.1.255
 true
 ```
+
+# Benchmark
+
+You can see how our performance compares to other similar libraries [here](./benchmark/README.md).
