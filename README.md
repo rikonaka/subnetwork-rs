@@ -2,6 +2,8 @@
 
 Returns an iterator that iterates over all subnet IPs.
 
+[![Rust](https://github.com/rikonaka/subnetwork-rs/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/rikonaka/subnetwork-rs/actions/workflows/rust.yml)
+
 # Example
 
 ```rust
