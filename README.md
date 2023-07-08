@@ -9,39 +9,25 @@ Returns an iterator that iterates over all subnet IPs.
 ```rust
 use subnetwork::{Ipv4Pool，Ipv4};
 
-fn func_1() {
-    let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
-    for i in ips {
+fn main() {
+    let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+    let ipv4_pool = Ipv4Pool::new("192.168.1.0/24").unwrap();
+    for i in ipv4.iter(24) {
         println!("{:?}", i);
     }
-    let ret = ips.contain("192.168.1.200").unwrap();
-    println!("{:?}", ret);
-}
-
-fn func_2() {
-    let ip = Ipv4::new("192.168.1.1").unwrap();
-    for i in ip.iter(24) {
+    for i in ipv4_pool {
         println!("{:?}", i);
     }
-    let ret = ip.within("192.168.1.0/24").unwarp();
-    println!("{:?}", ret);
-}
-```
-**Output**
+    let ret = ipv4_pool.contain_from_str("192.168.1.200").unwrap();
+    assert_eq!(ret, true);
+    let ret = ipv4_pool.contain(ipv4);
+    assert_eq!(ret, true);
 
-```bash
-192.168.1.1
-192.168.1.2
-192.168.1.3
-192.168.1.4
-192.168.1.5
-192.168.1.6
-192.168.1.7
-192.168.1.8
-192.168.1.9
-...
-192.168.1.255
-true
+    let ret = ipv4.within_from_str("192.168.1.0/24").unwarp();
+    assert_eq!(ret, true);
+    let ret = ipv4.within(ipv4_pool);
+    assert_eq!(ret, true);
+}
 ```
 
 # Benchmark
