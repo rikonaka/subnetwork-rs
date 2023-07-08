@@ -613,8 +613,17 @@ mod tests {
     use super::*;
     #[test]
     fn ipv4_pool_print() {
-        let ipv4_pool = Ipv4Pool::new("192.168.1.0/24").unwrap();
-        println!("{}", ipv4_pool);
+        let test_str = "192.168.1.0/24";
+        let ipv4_pool = Ipv4Pool::new(test_str).unwrap();
+        let ipv4_pool_str = format!("{}", ipv4_pool);
+        assert_eq!(ipv4_pool_str, test_str);
+    }
+    #[test]
+    fn ipv4_print() {
+        let test_str = "192.168.1.1";
+        let ipv4 = Ipv4::new(test_str).unwrap();
+        let ipv4_str = format!("{}", ipv4);
+        assert_eq!(ipv4_str, test_str);
     }
     #[test]
     fn ipv4_iter() {
