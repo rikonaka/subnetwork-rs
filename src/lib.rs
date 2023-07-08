@@ -71,6 +71,46 @@ impl Iterator for Ipv6Pool {
     }
 }
 
+impl fmt::Display for Ipv4 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let addr: Ipv4Addr = self.addr.into();
+        write!(f, "{}", addr)
+    }
+}
+
+impl fmt::Display for Ipv6 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let addr: Ipv6Addr = self.addr.into();
+        write!(f, "{}", addr)
+    }
+}
+
+impl fmt::Display for Ipv4Pool {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let prefix: Ipv4Addr = self.prefix.into();
+        let mut netmask = 0;
+        let mut mask = self.mask;
+        while mask != 0 {
+            mask <<= 1;
+            netmask += 1;
+        }
+        write!(f, "{}/{}", prefix, netmask)
+    }
+}
+
+impl fmt::Display for Ipv6Pool {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let prefix: Ipv6Addr = self.prefix.into();
+        let mut netmask = 0;
+        let mut mask = self.mask;
+        while mask != 0 {
+            mask <<= 1;
+            netmask += 1;
+        }
+        write!(f, "{}/{}", prefix, netmask)
+    }
+}
+
 impl Ipv4Pool {
     /// Returns an Ipv4 iterator over the addresses contained in the network.
     ///
@@ -571,6 +611,11 @@ impl Ipv6 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn ipv4_pool_print() {
+        let ipv4_pool = Ipv4Pool::new("192.168.1.0/24").unwrap();
+        println!("{}", ipv4_pool);
+    }
     #[test]
     fn ipv4_iter() {
         let ipv4 = Ipv4::new("192.168.1.1").unwrap();
