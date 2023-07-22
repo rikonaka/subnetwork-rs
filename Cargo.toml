@@ -1,6 +1,6 @@
 [package]
 name = "subnetwork"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 license = "MIT"
 description = "Return all ip addresses of a subnetwork"

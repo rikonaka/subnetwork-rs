@@ -19,7 +19,7 @@ impl fmt::Display for InvalidInputError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Ipv4Pool {
     prefix: u32,
     mask: u32,
@@ -27,12 +27,12 @@ pub struct Ipv4Pool {
     stop: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Ipv4 {
     addr: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Ipv6Pool {
     prefix: u128,
     mask: u128,
@@ -40,7 +40,7 @@ pub struct Ipv6Pool {
     stop: u128,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Ipv6 {
     addr: u128,
 }
