@@ -200,22 +200,27 @@ impl Ipv4Pool {
             false
         }
     }
-    /// Returns the address of the network denoted by this `Ipv4`.
+    /// Returns the address of the network denoted by this `Ipv4Pool`.
     /// This means the lowest possible IP address inside of the network.
     pub fn network(&self) -> Ipv4Addr {
         self.prefix.into()
     }
-    /// Returns the broadcasting address of this `Ipv4`.
+    /// Returns the broadcasting address of this `Ipv4Pool`.
     /// This means the highest possible IP address inside of the network.
     pub fn broadcast(&self) -> Ipv4Addr {
         let biggest = !self.mask;
         let ret = self.prefix + biggest;
         ret.into()
     }
-    /// Returns the number of possible host addresses in this `Ipv4`
+    /// Returns the number of possible addresses in this `Ipv4Pool` (include 0 and 255)
     pub fn size(&self) -> usize {
         let biggest = !self.mask + 1;
         biggest as usize
+    }
+    /// Returns the number of valid addresses in this `Ipv4Pool` (NOT include 0 and 255)
+    pub fn len(&self) -> usize {
+        let length = !self.mask - 1;
+        length as usize
     }
 }
 
@@ -308,22 +313,27 @@ impl Ipv6Pool {
             false
         }
     }
-    /// Returns the address of the network denoted by this `Ipv4`.
+    /// Returns the address of the network denoted by this `Ipv6Pool`.
     /// This means the lowest possible IP address inside of the network.
     pub fn network(&self) -> Ipv6Addr {
         self.prefix.into()
     }
-    /// Returns the broadcasting address of this `Ipv4`.
+    /// Returns the broadcasting address of this `Ipv6Pool`.
     /// This means the highest possible IP address inside of the network.
     pub fn broadcast(&self) -> Ipv6Addr {
         let biggest = !self.mask;
         let ret = self.prefix + biggest;
         ret.into()
     }
-    /// Returns the number of possible host addresses in this `Ipv4`
+    /// Returns the number of possible host addresses in this `Ipv6Pool` (include 0 and 255)
     pub fn size(&self) -> usize {
         let biggest = !self.mask + 1;
         biggest as usize
+    }
+    /// Returns the number of valid addresses in this `Ipv6Pool` (NOT include 0 and 255)
+    pub fn len(&self) -> usize {
+        let length = !self.mask - 1;
+        length as usize
     }
 }
 
@@ -436,11 +446,17 @@ impl Ipv4 {
         let ret = prefix + biggest;
         ret.into()
     }
-    /// Returns the number of possible host addresses in this `Ipv4`
+    /// Returns the number of possible host addresses in this `Ipv4` (include 0 and 255)
     pub fn size(&self, netmask: usize) -> usize {
         let exp = (IPV4_LEN - netmask) as u32;
         let biggest = u32::pow(2, exp);
         biggest as usize
+    }
+    /// Returns the number of valid addresses in this `Ipv4` (NOT include 0 and 255)
+    pub fn len(&self, netmask: usize) -> usize {
+        let exp = (IPV4_LEN - netmask) as u32;
+        let length = u32::pow(2, exp) - 2;
+        length as usize
     }
     /// Returns the standard IPv4 address.
     pub fn to_std(&self) -> Ipv4Addr {
@@ -582,6 +598,12 @@ impl Ipv6 {
         let biggest = u128::pow(2, exp);
         biggest as usize
     }
+    /// Returns the number of valid addresses in this `Ipv6` (NOT include 0 and 255)
+    pub fn len(&self, netmask: usize) -> usize {
+        let exp = (IPV6_LEN - netmask) as u32;
+        let length = u128::pow(2, exp) - 2;
+        length as usize
+    }
     /// Returns the standard IPv4 address.
     pub fn to_std(&self) -> Ipv6Addr {
         self.addr.into()
@@ -611,6 +633,7 @@ impl Ipv6 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    /******************** ipv4 ********************/
     #[test]
     fn ipv4_pool_print() {
         let test_str = "192.168.1.0/24";
@@ -683,6 +706,14 @@ mod tests {
         assert_eq!(subnet_size, 256);
     }
     #[test]
+    fn ipv4_len() {
+        let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+        let subnet_size = ipv4.len(24);
+        println!("{:?}", subnet_size);
+        assert_eq!(subnet_size, 254);
+    }
+    /******************** ipv6 ********************/
+    #[test]
     fn ipv6() {
         let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
         println!("{:?}", ipv6);
@@ -712,10 +743,18 @@ mod tests {
     #[test]
     fn ipv6_size() {
         let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
-        println!("{:?}", ipv6.size(120));
-        assert_eq!(ipv6.size(120), 256);
+        let subnet_size = ipv6.size(120);
+        println!("{:?}", subnet_size);
+        assert_eq!(subnet_size, 256);
     }
-    // IP pool
+    #[test]
+    fn ipv6_len() {
+        let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+        let subnet_len = ipv6.len(120);
+        println!("{:?}", subnet_len);
+        assert_eq!(subnet_len, 254);
+    }
+    /******************** ipv4 pool ********************/
     #[test]
     fn ipv4_pool() {
         let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
@@ -725,21 +764,21 @@ mod tests {
         assert_eq!(1, 1);
     }
     #[test]
-    fn ipv4_contain() {
+    fn ipv4_pool_contain_1() {
         let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
         let ret = ips.contain_from_str("192.168.1.20").unwrap();
         println!("{:?}", ret);
         assert_eq!(ret, true);
     }
     #[test]
-    fn ipv4_contain_2() {
+    fn ipv4_pool_contain_2() {
         let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
         let ret = ips.contain_from_str("10.8.0.20").unwrap();
         println!("{:?}", ret);
         assert_eq!(ret, false);
     }
     #[test]
-    fn ipv4_network_2() {
+    fn ipv4_pool_network() {
         let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
         let network = ips.network();
         let network_2 = Ipv4Addr::new(192, 168, 1, 0);
@@ -747,7 +786,7 @@ mod tests {
         assert_eq!(network, network_2);
     }
     #[test]
-    fn ipv4_broadcast_2() {
+    fn ipv4_pool_broadcast() {
         let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
         let broadcast = ips.broadcast();
         let broadcast_2 = Ipv4Addr::new(192, 168, 1, 255);
@@ -755,10 +794,17 @@ mod tests {
         assert_eq!(broadcast, broadcast_2);
     }
     #[test]
-    fn ipv4_size_2() {
+    fn ipv4_pool_size() {
         let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
         let size = ips.size();
         println!("{:?}", size);
         assert_eq!(size, 256);
+    }
+    #[test]
+    fn ipv4_pool_len() {
+        let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+        let size = ips.len();
+        println!("{:?}", size);
+        assert_eq!(size, 254);
     }
 }
