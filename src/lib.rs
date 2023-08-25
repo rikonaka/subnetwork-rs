@@ -122,13 +122,13 @@ impl Ipv4Pool {
     /// use subnetwork::Ipv4Pool;
     ///
     /// fn main() {
-    ///     let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+    ///     let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
     ///     for i in ips {
     ///         println!("{:?}", i);
     ///     }
     /// }
     /// ```
-    pub fn new(address: &str) -> Result<Ipv4Pool, InvalidInputError> {
+    pub fn from(address: &str) -> Result<Ipv4Pool, InvalidInputError> {
         if address.contains("/") {
             let address_vec: Vec<&str> = address.split("/").collect();
             if address_vec.len() == 2 {
@@ -162,7 +162,7 @@ impl Ipv4Pool {
     /// use subnetwork::Ipv4Pool;
     ///
     /// fn main() {
-    ///     let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+    ///     let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
     ///     let ret = ips.contain_from_str("192.168.1.20").unwrap();
     ///     assert_eq!(ret, true);
     /// }
@@ -189,7 +189,7 @@ impl Ipv4Pool {
     /// use subnetwork::Ipv4Pool;
     ///
     /// fn main() {
-    ///     let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+    ///     let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
     ///     let ip = Ipv4Addr::from_str("192.168.1.20").unwrap();
     ///     let ret = ips.contain(ip);
     ///     assert_eq!(ret, true);
@@ -235,13 +235,13 @@ impl Ipv6Pool {
     /// use subnetwork::Ipv6Pool;
     ///
     /// fn main() {
-    ///     let ips = Ipv6Pool::new("::ffff:192.10.2.0/120").unwrap();
+    ///     let ips = Ipv6Pool::from("::ffff:192.10.2.0/120").unwrap();
     ///     for i in ips {
     ///         println!("{:?}", i);
     ///     }
     /// }
     /// ```
-    pub fn new(address: &str) -> Result<Ipv6Pool, InvalidInputError> {
+    pub fn from(address: &str) -> Result<Ipv6Pool, InvalidInputError> {
         if address.contains("/") {
             let address_vec: Vec<&str> = address.split("/").collect();
             if address_vec.len() == 2 {
@@ -275,7 +275,7 @@ impl Ipv6Pool {
     /// use subnetwork::Ipv6Pool;
     ///
     /// fn main() {
-    ///     let ips = Ipv6Pool::new("::ffff:192.10.2.0/120").unwrap();
+    ///     let ips = Ipv6Pool::from("::ffff:192.10.2.0/120").unwrap();
     ///     let ret = ips.contain_from_str("::ffff:192.10.2.1").unwrap();
     ///     assert_eq!(ret, true);
     /// }
@@ -302,7 +302,7 @@ impl Ipv6Pool {
     /// use subnetwork::Ipv6Pool;
     ///
     /// fn main() {
-    ///     let ips = Ipv6Pool::new("::ffff:192.10.2.0/120").unwrap();
+    ///     let ips = Ipv6Pool::from("::ffff:192.10.2.0/120").unwrap();
     ///     let ip = Ipv6Addr::from_str("::ffff:192.10.2.1").unwrap();
     ///     let ret = ips.contain(ip);
     ///     assert_eq!(ret, true);
@@ -419,7 +419,7 @@ impl Ipv4 {
     ///
     /// fn main() {
     ///     let ipv4 = Ipv4::from("192.168.1.1").unwrap();
-    ///     let ipv4_pool = Ipv4Pool::new("192.168.1.0/24").unwrap();
+    ///     let ipv4_pool = Ipv4Pool::from("192.168.1.0/24").unwrap();
     ///     let ret = ipv4.within(ipv4_pool);
     ///     assert_eq!(ret, true);
     /// }
@@ -570,7 +570,7 @@ impl Ipv6 {
     ///
     /// fn main() {
     ///     let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
-    ///     let ipv6_pool = Ipv6Pool::new("::ffff:192.10.2.255/120").unwrap();
+    ///     let ipv6_pool = Ipv6Pool::from("::ffff:192.10.2.255/120").unwrap();
     ///     let ret = ipv6.within(ipv6_pool);
     ///     assert_eq!(ret, true);
     /// }
@@ -651,7 +651,7 @@ mod tests {
     #[test]
     fn ipv4_pool_print() {
         let test_str = "192.168.1.0/24";
-        let ipv4_pool = Ipv4Pool::new(test_str).unwrap();
+        let ipv4_pool = Ipv4Pool::from(test_str).unwrap();
         let ipv4_pool_str = format!("{}", ipv4_pool);
         assert_eq!(ipv4_pool_str, test_str);
     }
@@ -771,7 +771,7 @@ mod tests {
     /******************** ipv4 pool ********************/
     #[test]
     fn ipv4_pool() {
-        let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+        let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
         for i in ips {
             println!("{:?}", i);
         }
@@ -779,21 +779,21 @@ mod tests {
     }
     #[test]
     fn ipv4_pool_contain_1() {
-        let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+        let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
         let ret = ips.contain_from_str("192.168.1.20").unwrap();
         println!("{:?}", ret);
         assert_eq!(ret, true);
     }
     #[test]
     fn ipv4_pool_contain_2() {
-        let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+        let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
         let ret = ips.contain_from_str("10.8.0.20").unwrap();
         println!("{:?}", ret);
         assert_eq!(ret, false);
     }
     #[test]
     fn ipv4_pool_network() {
-        let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+        let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
         let network = ips.network();
         let network_2 = Ipv4Addr::new(192, 168, 1, 0);
         println!("{:?}", network);
@@ -801,7 +801,7 @@ mod tests {
     }
     #[test]
     fn ipv4_pool_broadcast() {
-        let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+        let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
         let broadcast = ips.broadcast();
         let broadcast_2 = Ipv4Addr::new(192, 168, 1, 255);
         println!("{:?}", broadcast);
@@ -809,14 +809,14 @@ mod tests {
     }
     #[test]
     fn ipv4_pool_size() {
-        let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+        let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
         let size = ips.size();
         println!("{:?}", size);
         assert_eq!(size, 256);
     }
     #[test]
     fn ipv4_pool_len() {
-        let ips = Ipv4Pool::new("192.168.1.0/24").unwrap();
+        let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
         let size = ips.len();
         println!("{:?}", size);
         assert_eq!(size, 254);
