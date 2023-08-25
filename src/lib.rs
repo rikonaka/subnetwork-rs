@@ -1,7 +1,7 @@
 //! The `subnetwork` crate provides a set of APIs to work with IP CIDRs in Rust.
+use std::error::Error;
 use std::net::{AddrParseError, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
-use std::error::Error;
 
 const INIT_NEXT_VALUE: usize = 1;
 const IPV4_LEN: usize = 32;
@@ -341,8 +341,14 @@ impl Ipv6Pool {
 }
 
 impl Ipv4 {
+    /// Constructs a new `Ipv4` from a given Ipv4Addr.
+    pub fn new(address: Ipv4Addr) -> Result<Ipv4, AddrParseError> {
+        // address: 192.168.1.1
+        let addr: u32 = address.into();
+        Ok(Ipv4 { addr })
+    }
     /// Constructs a new `Ipv4` from a given `&str`.
-    pub fn new(address: &str) -> Result<Ipv4, AddrParseError> {
+    pub fn from(address: &str) -> Result<Ipv4, AddrParseError> {
         // address: 192.168.1.1
         match Ipv4Addr::from_str(address) {
             Ok(addr) => {
@@ -359,7 +365,7 @@ impl Ipv4 {
     /// use subnetwork::Ipv4;
     ///
     /// fn main() {
-    ///     let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+    ///     let ipv4 = Ipv4::from("192.168.1.1").unwrap();
     ///     for i in ipv4.iter(24) {
     ///         println!("{:?}", i);
     ///     }
@@ -387,7 +393,7 @@ impl Ipv4 {
     /// use subnetwork::Ipv4;
     ///
     /// fn main() {
-    ///     let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+    ///     let ipv4 = Ipv4::from("192.168.1.1").unwrap();
     ///     let ret = ipv4.within_from_str("192.168.1.0/24").unwrap();
     ///     assert_eq!(ret, true);
     /// }
@@ -412,7 +418,7 @@ impl Ipv4 {
     /// use subnetwork::{Ipv4, Ipv4Pool};
     ///
     /// fn main() {
-    ///     let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+    ///     let ipv4 = Ipv4::from("192.168.1.1").unwrap();
     ///     let ipv4_pool = Ipv4Pool::new("192.168.1.0/24").unwrap();
     ///     let ret = ipv4.within(ipv4_pool);
     ///     assert_eq!(ret, true);
@@ -488,8 +494,13 @@ impl Ipv4 {
 }
 
 impl Ipv6 {
+    /// Constructs a new `Ipv6` from a given Ipv6Addr.
+    pub fn new(address: Ipv6Addr) -> Result<Ipv6, AddrParseError> {
+        let addr: u128 = address.into();
+        Ok(Ipv6 { addr })
+    }
     /// Constructs a new `Ipv6` from a given `&str`.
-    pub fn new(address: &str) -> Result<Ipv6, AddrParseError> {
+    pub fn from(address: &str) -> Result<Ipv6, AddrParseError> {
         match Ipv6Addr::from_str(address) {
             Ok(addr) => {
                 let addr: u128 = addr.into();
@@ -505,7 +516,7 @@ impl Ipv6 {
     /// use subnetwork::Ipv6;
     ///
     /// fn main() {
-    ///     let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+    ///     let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
     ///     for i in ipv6.iter(124) {
     ///         println!("{:?}", i);
     ///     }
@@ -533,7 +544,7 @@ impl Ipv6 {
     /// use subnetwork::Ipv6;
     ///
     /// fn main() {
-    ///     let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+    ///     let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
     ///     let ret = ipv6.within_from_str("::ffff:192.10.2.255/120").unwrap();
     ///     assert_eq!(ret, true);
     /// }
@@ -558,7 +569,7 @@ impl Ipv6 {
     /// use subnetwork::{Ipv6, Ipv6Pool};
     ///
     /// fn main() {
-    ///     let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+    ///     let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
     ///     let ipv6_pool = Ipv6Pool::new("::ffff:192.10.2.255/120").unwrap();
     ///     let ret = ipv6.within(ipv6_pool);
     ///     assert_eq!(ret, true);
@@ -647,13 +658,13 @@ mod tests {
     #[test]
     fn ipv4_print() {
         let test_str = "192.168.1.1";
-        let ipv4 = Ipv4::new(test_str).unwrap();
+        let ipv4 = Ipv4::from(test_str).unwrap();
         let ipv4_str = format!("{}", ipv4);
         assert_eq!(ipv4_str, test_str);
     }
     #[test]
     fn ipv4_iter() {
-        let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
         for i in ipv4.iter(24) {
             println!("{:?}", i);
         }
@@ -661,7 +672,7 @@ mod tests {
     }
     #[test]
     fn ipv6_iter() {
-        let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
         for i in ipv6.iter(124) {
             println!("{:?}", i);
         }
@@ -669,48 +680,48 @@ mod tests {
     }
     #[test]
     fn ipv4() {
-        let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
         println!("{:8b}", ipv4.addr);
         assert_eq!(ipv4.addr, 3232235777);
     }
     #[test]
     fn ipv4_within_test_1() {
-        let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
         let ret = ipv4.within_from_str("192.168.1.0/24").unwrap();
         println!("{:?}", ret);
         assert_eq!(ret, true);
     }
     #[test]
     fn ipv4_within_test_2() {
-        let ipv4 = Ipv4::new("10.8.0.22").unwrap();
+        let ipv4 = Ipv4::from("10.8.0.22").unwrap();
         let ret = ipv4.within_from_str("192.168.1.0/24").unwrap();
         println!("{:?}", ret);
         assert_eq!(ret, false);
     }
     #[test]
     fn ipv4_network() {
-        let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
         let ipv4_2 = Ipv4Addr::new(192, 168, 1, 0);
         println!("{:?}", ipv4.network(24));
         assert_eq!(ipv4.network(24), ipv4_2);
     }
     #[test]
     fn ipv4_broadcast() {
-        let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
         let ipv4_2 = Ipv4Addr::new(192, 168, 1, 255);
         println!("{:?}", ipv4.broadcast(24));
         assert_eq!(ipv4.broadcast(24), ipv4_2);
     }
     #[test]
     fn ipv4_size() {
-        let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
         let subnet_size = ipv4.size(24);
         println!("{:?}", subnet_size);
         assert_eq!(subnet_size, 256);
     }
     #[test]
     fn ipv4_len() {
-        let ipv4 = Ipv4::new("192.168.1.1").unwrap();
+        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
         let subnet_size = ipv4.len(24);
         println!("{:?}", subnet_size);
         assert_eq!(subnet_size, 254);
@@ -718,41 +729,41 @@ mod tests {
     /******************** ipv6 ********************/
     #[test]
     fn ipv6() {
-        let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
         println!("{:?}", ipv6);
         assert_eq!(ipv6.addr, 281473903624959);
     }
     #[test]
     fn ipv6_within_test_1() {
-        let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
         let ret = ipv6.within_from_str("::ffff:192.10.2.255/120").unwrap();
         println!("{:?}", ret);
         assert_eq!(ret, true);
     }
     #[test]
     fn ipv6_network() {
-        let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
         let ipv6_2: Ipv6Addr = "::ffff:192.10.2.0".parse().unwrap();
         println!("{:?}", ipv6.network(120));
         assert_eq!(ipv6.network(120), ipv6_2);
     }
     #[test]
     fn ipv6_broadcast() {
-        let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
         let ipv6_2: Ipv6Addr = "::ffff:192.10.2.255".parse().unwrap();
         println!("{:?}", ipv6.broadcast(120));
         assert_eq!(ipv6.broadcast(120), ipv6_2);
     }
     #[test]
     fn ipv6_size() {
-        let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
         let subnet_size = ipv6.size(120);
         println!("{:?}", subnet_size);
         assert_eq!(subnet_size, 256);
     }
     #[test]
     fn ipv6_len() {
-        let ipv6 = Ipv6::new("::ffff:192.10.2.255").unwrap();
+        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
         let subnet_len = ipv6.len(120);
         println!("{:?}", subnet_len);
         assert_eq!(subnet_len, 254);
