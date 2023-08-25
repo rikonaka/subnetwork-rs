@@ -1,13 +1,12 @@
 //! The `subnetwork` crate provides a set of APIs to work with IP CIDRs in Rust.
 use std::error::Error;
+use std::fmt;
 use std::net::{AddrParseError, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
 const INIT_NEXT_VALUE: usize = 1;
 const IPV4_LEN: usize = 32;
 const IPV6_LEN: usize = 128;
-
-use std::fmt;
 
 #[derive(Debug)]
 pub struct InvalidInputError {
