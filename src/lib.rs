@@ -120,6 +120,45 @@ impl Ipv4Pool {
     /// # Example
     /// ```
     /// use subnetwork::Ipv4Pool;
+    /// use std::net::Ipv4Addr;
+    ///
+    /// fn main() {
+    ///     let ip = Ipv4Addr::new(192, 168, 1, 1);
+    ///     let ips = Ipv4Pool::new(ip, 24).unwrap();
+    ///     for i in ips {
+    ///         println!("{:?}", i);
+    ///     }
+    /// }
+    /// ```
+    pub fn new(address: Ipv4Addr, netmask: usize) -> Result<Ipv4Pool, InvalidInputError> {
+        if netmask > 32 {
+            let error_addr = format!("{}/{}", address, netmask);
+            Err(InvalidInputError {
+                message: error_addr,
+            })
+        } else {
+            let addr: u32 = address.into();
+            let mut mask: u32 = u32::MAX;
+            for _ in 0..(IPV4_LEN - netmask) {
+                mask <<= 1;
+            }
+            let exp = (IPV4_LEN - netmask) as u32;
+            let next = INIT_NEXT_VALUE as u32;
+            let stop = u32::pow(2, exp);
+            let prefix = addr & mask;
+            return Ok(Ipv4Pool {
+                prefix,
+                mask,
+                next,
+                stop,
+            });
+        }
+    }
+    /// Returns an Ipv4 iterator over the addresses contained in the network.
+    ///
+    /// # Example
+    /// ```
+    /// use subnetwork::Ipv4Pool;
     ///
     /// fn main() {
     ///     let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
@@ -228,6 +267,43 @@ impl Ipv4Pool {
 }
 
 impl Ipv6Pool {
+    /// Returns an Ipv6 iterator over the addresses contained in the network.
+    ///
+    /// # Example
+    /// ```
+    /// use subnetwork::Ipv6Pool;
+    ///
+    /// fn main() {
+    ///     let ips = Ipv6Pool::from("::ffff:192.10.2.0/120").unwrap();
+    ///     for i in ips {
+    ///         println!("{:?}", i);
+    ///     }
+    /// }
+    /// ```
+    pub fn new(address: Ipv6Addr, netmask: usize) -> Result<Ipv6Pool, InvalidInputError> {
+        if netmask > 128 {
+            let error_addr = format!("{}/{}", address, netmask);
+            Err(InvalidInputError {
+                message: error_addr,
+            })
+        } else {
+            let addr: u128 = address.into();
+            let mut mask: u128 = u128::MAX;
+            for _ in 0..(IPV6_LEN - netmask) {
+                mask <<= 1;
+            }
+            let exp = (IPV6_LEN - netmask) as u32;
+            let next = INIT_NEXT_VALUE as u128;
+            let stop = u128::pow(2, exp);
+            let prefix = addr & mask;
+            return Ok(Ipv6Pool {
+                prefix,
+                mask,
+                next,
+                stop,
+            });
+        }
+    }
     /// Returns an Ipv6 iterator over the addresses contained in the network.
     ///
     /// # Example
@@ -772,6 +848,15 @@ mod tests {
     #[test]
     fn ipv4_pool() {
         let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
+        for i in ips {
+            println!("{:?}", i);
+        }
+        assert_eq!(1, 1);
+    }
+    #[test]
+    fn ipv4_pool_new() {
+        let ip = Ipv4Addr::new(192, 168, 1, 1);
+        let ips = Ipv4Pool::new(ip, 24).unwrap();
         for i in ips {
             println!("{:?}", i);
         }
