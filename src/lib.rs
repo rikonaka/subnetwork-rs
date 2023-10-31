@@ -90,26 +90,26 @@ impl fmt::Display for Ipv6 {
 impl fmt::Display for Ipv4Pool {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let prefix: Ipv4Addr = self.prefix.into();
-        let mut netmask = 0;
+        let mut prefix_length = 0;
         let mut mask = self.mask;
         while mask != 0 {
             mask <<= 1;
-            netmask += 1;
+            prefix_length += 1;
         }
-        write!(f, "{}/{}", prefix, netmask)
+        write!(f, "{}/{}", prefix, prefix_length)
     }
 }
 
 impl fmt::Display for Ipv6Pool {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let prefix: Ipv6Addr = self.prefix.into();
-        let mut netmask = 0;
+        let mut prefix_length = 0;
         let mut mask = self.mask;
         while mask != 0 {
             mask <<= 1;
-            netmask += 1;
+            prefix_length += 1;
         }
-        write!(f, "{}/{}", prefix, netmask)
+        write!(f, "{}/{}", prefix, prefix_length)
     }
 }
 
