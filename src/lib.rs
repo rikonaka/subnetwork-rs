@@ -4,9 +4,9 @@ use std::fmt;
 use std::net::{AddrParseError, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
-const INIT_NEXT_VALUE: usize = 1;
-const IPV4_LEN: usize = 32;
-const IPV6_LEN: usize = 128;
+const INIT_NEXT_VALUE: u8 = 1;
+const IPV4_LEN: u8 = 32;
+const IPV6_LEN: u8 = 128;
 
 #[derive(Debug)]
 pub struct InvalidInputError {
@@ -129,19 +129,19 @@ impl Ipv4Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(address: Ipv4Addr, netmask: usize) -> Result<Ipv4Pool, InvalidInputError> {
-        if netmask > 32 {
-            let error_addr = format!("{}/{}", address, netmask);
+    pub fn new(address: Ipv4Addr, prefix_length: u8) -> Result<Ipv4Pool, InvalidInputError> {
+        if prefix_length > 32 {
+            let error_addr = format!("{}/{}", address, prefix_length);
             Err(InvalidInputError {
                 message: error_addr,
             })
         } else {
             let addr: u32 = address.into();
             let mut mask: u32 = u32::MAX;
-            for _ in 0..(IPV4_LEN - netmask) {
+            for _ in 0..(IPV4_LEN - prefix_length) {
                 mask <<= 1;
             }
-            let exp = (IPV4_LEN - netmask) as u32;
+            let exp = (IPV4_LEN - prefix_length) as u32;
             let next = INIT_NEXT_VALUE as u32;
             let stop = u32::pow(2, exp);
             let prefix = addr & mask;
@@ -172,12 +172,12 @@ impl Ipv4Pool {
             if address_vec.len() == 2 {
                 let addr: Ipv4Addr = address_vec[0].parse().unwrap();
                 let addr: u32 = addr.into();
-                let netmask: usize = address_vec[1].parse().unwrap();
+                let prefix_length: u8 = address_vec[1].parse().unwrap();
                 let mut mask: u32 = u32::MAX;
-                for _ in 0..(IPV4_LEN - netmask) {
+                for _ in 0..(IPV4_LEN - prefix_length) {
                     mask <<= 1;
                 }
-                let exp = (IPV4_LEN - netmask) as u32;
+                let exp = (IPV4_LEN - prefix_length) as u32;
                 let next = INIT_NEXT_VALUE as u32;
                 let stop = u32::pow(2, exp);
                 let prefix = addr & mask;
@@ -279,19 +279,19 @@ impl Ipv6Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(address: Ipv6Addr, netmask: usize) -> Result<Ipv6Pool, InvalidInputError> {
-        if netmask > 128 {
-            let error_addr = format!("{}/{}", address, netmask);
+    pub fn new(address: Ipv6Addr, prefix_length: u8) -> Result<Ipv6Pool, InvalidInputError> {
+        if prefix_length > 128 {
+            let error_addr = format!("{}/{}", address, prefix_length);
             Err(InvalidInputError {
                 message: error_addr,
             })
         } else {
             let addr: u128 = address.into();
             let mut mask: u128 = u128::MAX;
-            for _ in 0..(IPV6_LEN - netmask) {
+            for _ in 0..(IPV6_LEN - prefix_length) {
                 mask <<= 1;
             }
-            let exp = (IPV6_LEN - netmask) as u32;
+            let exp = (IPV6_LEN - prefix_length) as u32;
             let next = INIT_NEXT_VALUE as u128;
             let stop = u128::pow(2, exp);
             let prefix = addr & mask;
@@ -322,12 +322,12 @@ impl Ipv6Pool {
             if address_vec.len() == 2 {
                 let addr: Ipv6Addr = address_vec[0].parse().unwrap();
                 let addr: u128 = addr.into();
-                let netmask: usize = address_vec[1].parse().unwrap();
+                let prefix_length: u8 = address_vec[1].parse().unwrap();
                 let mut mask: u128 = u128::MAX;
-                for _ in 0..(IPV6_LEN - netmask) {
+                for _ in 0..(IPV6_LEN - prefix_length) {
                     mask <<= 1;
                 }
-                let exp = (IPV6_LEN - netmask) as u32;
+                let exp = (IPV6_LEN - prefix_length) as u32;
                 let next = INIT_NEXT_VALUE as u128;
                 let stop = u128::pow(2, exp);
                 let prefix = addr & mask;
@@ -446,12 +446,12 @@ impl Ipv4 {
     ///     }
     /// }
     /// ```
-    pub fn iter(&self, netmask: usize) -> Ipv4Pool {
+    pub fn iter(&self, prefix_length: u8) -> Ipv4Pool {
         let mut mask: u32 = u32::MAX;
-        for _ in 0..(IPV4_LEN - netmask) {
+        for _ in 0..(IPV4_LEN - prefix_length) {
             mask <<= 1;
         }
-        let exp = (IPV4_LEN - netmask) as u32;
+        let exp = (IPV4_LEN - prefix_length) as u32;
         let next = INIT_NEXT_VALUE as u32;
         let stop = u32::pow(2, exp);
         let prefix = self.addr & mask;
@@ -509,9 +509,9 @@ impl Ipv4 {
     }
     /// Returns the address of the network denoted by this `Ipv4`.
     /// This means the lowest possible IP address inside of the network.
-    pub fn network(&self, netmask: usize) -> Ipv4Addr {
+    pub fn network(&self, prefix_length: u8) -> Ipv4Addr {
         let mut mask: u32 = u32::MAX;
-        for _ in 0..(IPV4_LEN - netmask) {
+        for _ in 0..(IPV4_LEN - prefix_length) {
             mask <<= 1;
         }
         let ret = self.addr & mask;
@@ -519,26 +519,26 @@ impl Ipv4 {
     }
     /// Returns the broadcasting address of this `Ipv4`.
     /// This means the highest possible IP address inside of the network.
-    pub fn broadcast(&self, netmask: usize) -> Ipv4Addr {
+    pub fn broadcast(&self, prefix_length: u8) -> Ipv4Addr {
         let mut mask: u32 = u32::MAX;
-        for _ in 0..(IPV4_LEN - netmask) {
+        for _ in 0..(IPV4_LEN - prefix_length) {
             mask <<= 1;
         }
         let prefix = self.addr & mask;
-        let exp = (IPV4_LEN - netmask) as u32;
+        let exp = (IPV4_LEN - prefix_length) as u32;
         let biggest = u32::pow(2, exp) - 1;
         let ret = prefix + biggest;
         ret.into()
     }
     /// Returns the number of possible host addresses in this `Ipv4` (include 0 and 255)
-    pub fn size(&self, netmask: usize) -> usize {
-        let exp = (IPV4_LEN - netmask) as u32;
+    pub fn size(&self, prefix_length: u8) -> usize {
+        let exp = (IPV4_LEN - prefix_length) as u32;
         let biggest = u32::pow(2, exp);
         biggest as usize
     }
     /// Returns the number of valid addresses in this `Ipv4` (NOT include 0 and 255)
-    pub fn len(&self, netmask: usize) -> usize {
-        let exp = (IPV4_LEN - netmask) as u32;
+    pub fn len(&self, prefix_length: u8) -> usize {
+        let exp = (IPV4_LEN - prefix_length) as u32;
         let length = u32::pow(2, exp) - 2;
         length as usize
     }
@@ -546,19 +546,19 @@ impl Ipv4 {
     pub fn to_std(&self) -> Ipv4Addr {
         self.addr.into()
     }
-    fn get_subnet_mask(&self, netmask: usize) -> u32 {
+    fn get_subnet_mask(&self, prefix_length: u8) -> u32 {
         let mut mask: u32 = u32::MAX;
-        for _ in 0..(IPV4_LEN - netmask) {
+        for _ in 0..(IPV4_LEN - prefix_length) {
             mask <<= 1;
         }
         mask
     }
-    fn subnet_split(&self, subnet_address: &str) -> Result<(Ipv4Addr, usize), InvalidInputError> {
+    fn subnet_split(&self, subnet_address: &str) -> Result<(Ipv4Addr, u8), InvalidInputError> {
         if subnet_address.contains("/") {
             let subnet_address_vec: Vec<&str> = subnet_address.split("/").collect();
             if subnet_address_vec.len() == 2 {
                 let subnet = subnet_address_vec[0].parse().unwrap();
-                let prefix: usize = subnet_address_vec[1].parse().unwrap();
+                let prefix: u8 = subnet_address_vec[1].parse().unwrap();
                 return Ok((subnet, prefix));
             }
         }
@@ -626,12 +626,12 @@ impl Ipv6 {
     ///     }
     /// }
     /// ```
-    pub fn iter(&self, netmask: usize) -> Ipv6Pool {
+    pub fn iter(&self, prefix_length: u8) -> Ipv6Pool {
         let mut mask: u128 = u128::MAX;
-        for _ in 0..(IPV6_LEN - netmask) {
+        for _ in 0..(IPV6_LEN - prefix_length) {
             mask <<= 1;
         }
-        let exp = (IPV6_LEN - netmask) as u32;
+        let exp = (IPV6_LEN - prefix_length) as u32;
         let next = INIT_NEXT_VALUE as u128;
         let stop = u128::pow(2, exp);
         let prefix = self.addr & mask;
@@ -689,9 +689,9 @@ impl Ipv6 {
     }
     /// Returns the address of the network denoted by this `Ipv6`.
     /// This means the lowest possible IP address inside of the network.
-    pub fn network(&self, netmask: usize) -> Ipv6Addr {
+    pub fn network(&self, prefix_length: u8) -> Ipv6Addr {
         let mut mask: u128 = u128::MAX;
-        for _ in 0..(IPV6_LEN - netmask) {
+        for _ in 0..(IPV6_LEN - prefix_length) {
             mask <<= 1;
         }
         let ret = self.addr & mask;
@@ -699,26 +699,26 @@ impl Ipv6 {
     }
     /// Returns the broadcasting address of this `Ipv6`.
     /// This means the highest possible IP address inside of the network.
-    pub fn broadcast(&self, netmask: usize) -> Ipv6Addr {
+    pub fn broadcast(&self, prefix_length: u8) -> Ipv6Addr {
         let mut mask: u128 = u128::MAX;
-        for _ in 0..(IPV6_LEN - netmask) {
+        for _ in 0..(IPV6_LEN - prefix_length) {
             mask <<= 1;
         }
         let prefix = self.addr & mask;
-        let exp = (IPV6_LEN - netmask) as u32;
+        let exp = (IPV6_LEN - prefix_length) as u32;
         let biggest = u128::pow(2, exp) - 1;
         let ret = prefix + biggest;
         ret.into()
     }
     /// Returns the number of possible host addresses in this `Ipv6`
-    pub fn size(&self, netmask: usize) -> usize {
-        let exp = (IPV6_LEN - netmask) as u32;
+    pub fn size(&self, prefix_length: u8) -> usize {
+        let exp = (IPV6_LEN - prefix_length) as u32;
         let biggest = u128::pow(2, exp);
         biggest as usize
     }
     /// Returns the number of valid addresses in this `Ipv6` (NOT include 0 and 255)
-    pub fn len(&self, netmask: usize) -> usize {
-        let exp = (IPV6_LEN - netmask) as u32;
+    pub fn len(&self, prefix_length: u8) -> usize {
+        let exp = (IPV6_LEN - prefix_length) as u32;
         let length = u128::pow(2, exp) - 2;
         length as usize
     }
@@ -726,19 +726,19 @@ impl Ipv6 {
     pub fn to_std(&self) -> Ipv6Addr {
         self.addr.into()
     }
-    fn get_subnet_mask(&self, netmask: usize) -> u128 {
+    fn get_subnet_mask(&self, prefix_length: u8) -> u128 {
         let mut mask: u128 = u128::MAX;
-        for _ in 0..(IPV6_LEN - netmask) {
+        for _ in 0..(IPV6_LEN - prefix_length) {
             mask <<= 1;
         }
         mask
     }
-    fn subnet_split(&self, subnet_address: &str) -> Result<(Ipv6Addr, usize), InvalidInputError> {
+    fn subnet_split(&self, subnet_address: &str) -> Result<(Ipv6Addr, u8), InvalidInputError> {
         if subnet_address.contains("/") {
             let subnet_address_vec: Vec<&str> = subnet_address.split("/").collect();
             if subnet_address_vec.len() == 2 {
                 let subnet = subnet_address_vec[0].parse().unwrap();
-                let prefix: usize = subnet_address_vec[1].parse().unwrap();
+                let prefix: u8 = subnet_address_vec[1].parse().unwrap();
                 return Ok((subnet, prefix));
             }
         }
