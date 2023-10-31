@@ -566,6 +566,35 @@ impl Ipv4 {
             message: subnet_address.to_string(),
         })
     }
+    /// Returns the largest identical prefix of two IP addresses.
+    /// # Example
+    /// ```
+    /// use subnetwork::{Ipv4, Ipv4Pool};
+    ///
+    /// fn main() {
+    ///     let ipv4_1 = Ipv4::from("192.168.1.136").unwrap();
+    ///     let ipv4_2 = Ipv4::from("192.168.1.192").unwrap();
+    ///     let ret = ipv4_1.largest_identical_prefix(ipv4_2);
+    ///     assert_eq!(ret, 25);
+    /// }
+    /// ```
+    pub fn largest_identical_prefix(&self, target: Ipv4) -> u32 {
+        let a = self.addr;
+        let b = target.addr;
+        let mut mask = 1;
+        for _ in 0..31 {
+            mask <<= 1;
+        }
+        let mut count = 0;
+        for _ in 0..32 {
+            if a & mask != b & mask {
+                break;
+            }
+            count += 1;
+            mask >>= 1;
+        }
+        count
+    }
 }
 
 impl Ipv6 {
@@ -716,6 +745,23 @@ impl Ipv6 {
         Err(InvalidInputError {
             message: subnet_address.to_string(),
         })
+    }
+    pub fn max_identical_prefix(&self, target: Ipv6) -> u128 {
+        let a = self.addr;
+        let b = target.addr;
+        let mut mask = 1;
+        for _ in 0..127 {
+            mask <<= 1;
+        }
+        let mut count = 0;
+        for _ in 0..128 {
+            if a & mask != b & mask {
+                break;
+            }
+            count += 1;
+            mask >>= 1;
+        }
+        count - 1
     }
 }
 
@@ -904,5 +950,32 @@ mod tests {
         let size = ips.len();
         println!("{:?}", size);
         assert_eq!(size, 254);
+    }
+    #[test]
+    fn test_largest_identical_prefix() {
+        let ipv4_1 = Ipv4::from("192.168.1.136").unwrap();
+        let ipv4_2 = Ipv4::from("192.168.1.192").unwrap();
+        let ret = ipv4_1.largest_identical_prefix(ipv4_2);
+        println!("{}", ret);
+    }
+    #[test]
+    fn test_max_idt() {
+        let a: u32 = 14;
+        let b: u32 = 12;
+        let mut mask = 1;
+        for _ in 0..31 {
+            mask <<= 1;
+        }
+        println!("{}", mask);
+
+        let mut count = 0;
+        for _ in 0..32 {
+            if a & mask != b & mask {
+                break;
+            }
+            count += 1;
+            mask >>= 1;
+        }
+        println!("{}", count);
     }
 }
