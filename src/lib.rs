@@ -396,13 +396,6 @@ impl Ipv6Pool {
     pub fn network(&self) -> Ipv6Addr {
         self.prefix.into()
     }
-    /// Returns the broadcasting address of this `Ipv6Pool`.
-    /// This means the highest possible IP address inside of the network.
-    pub fn broadcast(&self) -> Ipv6Addr {
-        let biggest = !self.mask;
-        let ret = self.prefix + biggest;
-        ret.into()
-    }
     /// Returns the number of possible host addresses in this `Ipv6Pool` (include 0 and 255)
     pub fn size(&self) -> usize {
         let biggest = !self.mask + 1;
@@ -417,10 +410,10 @@ impl Ipv6Pool {
 
 impl Ipv4 {
     /// Constructs a new `Ipv4` from a given Ipv4Addr.
-    pub fn new(address: Ipv4Addr) -> Result<Ipv4, AddrParseError> {
+    pub fn new(address: Ipv4Addr) -> Ipv4 {
         // address: 192.168.1.1
         let addr: u32 = address.into();
-        Ok(Ipv4 { addr })
+        Ipv4 { addr }
     }
     /// Constructs a new `Ipv4` from a given `&str`.
     pub fn from(address: &str) -> Result<Ipv4, AddrParseError> {
@@ -599,9 +592,9 @@ impl Ipv4 {
 
 impl Ipv6 {
     /// Constructs a new `Ipv6` from a given Ipv6Addr.
-    pub fn new(address: Ipv6Addr) -> Result<Ipv6, AddrParseError> {
+    pub fn new(address: Ipv6Addr) -> Ipv6 {
         let addr: u128 = address.into();
-        Ok(Ipv6 { addr })
+        Ipv6 { addr }
     }
     /// Constructs a new `Ipv6` from a given `&str`.
     pub fn from(address: &str) -> Result<Ipv6, AddrParseError> {
@@ -697,18 +690,29 @@ impl Ipv6 {
         let ret = self.addr & mask;
         ret.into()
     }
-    /// Returns the broadcasting address of this `Ipv6`.
-    /// This means the highest possible IP address inside of the network.
-    pub fn broadcast(&self, prefix_length: u8) -> Ipv6Addr {
-        let mut mask: u128 = u128::MAX;
-        for _ in 0..(IPV6_LEN - prefix_length) {
-            mask <<= 1;
-        }
-        let prefix = self.addr & mask;
-        let exp = (IPV6_LEN - prefix_length) as u32;
-        let biggest = u128::pow(2, exp) - 1;
-        let ret = prefix + biggest;
-        ret.into()
+    /// Returns the node local scope multicast address of this `Ipv6`.
+    pub fn node_multicast(&self) -> Ipv6Addr {
+        let node = Ipv6Addr::new(
+            0xFF01, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xFF00, 0x0000,
+        );
+        let node = Ipv6::new(node);
+        let mask = Ipv6Addr::new(
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00FF, 0xFFFF,
+        );
+        let mask = Ipv6::new(mask);
+        (node.addr + (mask.addr & self.addr)).into()
+    }
+    /// Returns the node local scope multicast address of this `Ipv6`.
+    pub fn link_multicast(&self) -> Ipv6Addr {
+        let link = Ipv6Addr::new(
+            0xFF02, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xFF00, 0x0000,
+        );
+        let link = Ipv6::new(link);
+        let mask = Ipv6Addr::new(
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00FF, 0xFFFF,
+        );
+        let mask = Ipv6::new(mask);
+        (link.addr + (mask.addr & self.addr)).into()
     }
     /// Returns the number of possible host addresses in this `Ipv6`
     pub fn size(&self, prefix_length: u8) -> usize {
@@ -869,11 +873,21 @@ mod tests {
         assert_eq!(ipv6.network(120), ipv6_2);
     }
     #[test]
-    fn ipv6_broadcast() {
+    fn ipv6_node() {
+        // let a: u8 = 0b1100;
+        // let b: u8 = 0b0011;
+        // println!("{}", a + b);
         let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
-        let ipv6_2: Ipv6Addr = "::ffff:192.10.2.255".parse().unwrap();
-        println!("{:?}", ipv6.broadcast(120));
-        assert_eq!(ipv6.broadcast(120), ipv6_2);
+        let ipv6_2: Ipv6Addr = "ff01::1:ff0a:2ff".parse().unwrap();
+        println!("{:?}", ipv6.node_multicast());
+        assert_eq!(ipv6.node_multicast(), ipv6_2);
+    }
+    #[test]
+    fn ipv6_link() {
+        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
+        let ipv6_2: Ipv6Addr = "ff02::1:ff0a:2ff".parse().unwrap();
+        println!("{:?}", ipv6.link_multicast());
+        assert_eq!(ipv6.link_multicast(), ipv6_2);
     }
     #[test]
     fn ipv6_size() {
