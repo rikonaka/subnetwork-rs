@@ -702,7 +702,7 @@ impl Ipv6 {
         let mask = Ipv6::new(mask);
         (node.addr + (mask.addr & self.addr)).into()
     }
-    /// Returns the node local scope multicast address of this `Ipv6`.
+    /// Returns the link local scope multicast address of this `Ipv6`.
     pub fn link_multicast(&self) -> Ipv6Addr {
         let link = Ipv6Addr::new(
             0xFF02, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xFF00, 0x0000,
@@ -713,6 +713,18 @@ impl Ipv6 {
         );
         let mask = Ipv6::new(mask);
         (link.addr + (mask.addr & self.addr)).into()
+    }
+    /// Returns the site local scope multicast address of this `Ipv6`.
+    pub fn site_multicast(&self) -> Ipv6Addr {
+        let site = Ipv6Addr::new(
+            0xFF05, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xFF00, 0x0000,
+        );
+        let site = Ipv6::new(site);
+        let mask = Ipv6Addr::new(
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00FF, 0xFFFF,
+        );
+        let mask = Ipv6::new(mask);
+        (site.addr + (mask.addr & self.addr)).into()
     }
     /// Returns the number of possible host addresses in this `Ipv6`
     pub fn size(&self, prefix_length: u8) -> usize {
