@@ -10,12 +10,12 @@ const IPV6_LEN: u8 = 128;
 
 #[derive(Debug)]
 pub struct InvalidInputError {
-    message: String,
+    msg: String,
 }
 
 impl fmt::Display for InvalidInputError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error: invalid input [{}]", self.message)
+        write!(f, "Error: invalid input [{}]", self.msg)
     }
 }
 
@@ -133,7 +133,7 @@ impl Ipv4Pool {
         if prefix_length > 32 {
             let error_addr = format!("{}/{}", address, prefix_length);
             Err(InvalidInputError {
-                message: error_addr,
+                msg: error_addr,
             })
         } else {
             let addr: u32 = address.into();
@@ -190,7 +190,7 @@ impl Ipv4Pool {
             }
         }
         Err(InvalidInputError {
-            message: address.to_string(),
+            msg: address.to_string(),
         })
     }
     /// Check if ip pool contains this ip.
@@ -283,7 +283,7 @@ impl Ipv6Pool {
         if prefix_length > 128 {
             let error_addr = format!("{}/{}", address, prefix_length);
             Err(InvalidInputError {
-                message: error_addr,
+                msg: error_addr,
             })
         } else {
             let addr: u128 = address.into();
@@ -340,7 +340,7 @@ impl Ipv6Pool {
             }
         }
         Err(InvalidInputError {
-            message: address.to_string(),
+            msg: address.to_string(),
         })
     }
     /// Check if ip pool contains this ip.
@@ -556,7 +556,7 @@ impl Ipv4 {
             }
         }
         Err(InvalidInputError {
-            message: subnet_address.to_string(),
+            msg: subnet_address.to_string(),
         })
     }
     /// Returns the largest identical prefix of two IP addresses.
@@ -759,7 +759,7 @@ impl Ipv6 {
             }
         }
         Err(InvalidInputError {
-            message: subnet_address.to_string(),
+            msg: subnet_address.to_string(),
         })
     }
     pub fn max_identical_prefix(&self, target: Ipv6) -> u128 {
