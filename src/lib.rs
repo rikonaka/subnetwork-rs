@@ -15,36 +15,84 @@ pub struct InvalidInputError {
 
 impl fmt::Display for InvalidInputError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error: invalid input [{}]", self.msg)
+        write!(f, "error: invalid input [{}]", self.msg)
     }
 }
 
-impl Error for InvalidInputError {}
+impl Error for InvalidInputError {
+    fn description(&self) -> &str {
+        &self.msg
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CrossIpv4Pool {
+    pub start: u32,
+    pub end: u32,
+    pub next: u32,
+}
+
+impl Iterator for CrossIpv4Pool {
+    type Item = Ipv4Addr;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.next <= self.end {
+            let ret = self.next;
+            self.next += 1;
+            Some(ret.into())
+        } else {
+            None
+        }
+    }
+}
+
+impl fmt::Display for CrossIpv4Pool {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let start: Ipv4Addr = self.start.into();
+        let end: Ipv4Addr = self.end.into();
+        write!(f, "{}-{}", start, end)
+    }
+}
+
+impl CrossIpv4Pool {
+    /// Returns an Ipv4 iterator over the cross different subnetwork addresses.
+    ///
+    /// # Example
+    /// ```
+    /// use subnetwork::CrossIpv4Pool;
+    /// use std::net::Ipv4Addr;
+    ///
+    /// fn main() {
+    ///     let start = Ipv4Addr::new(192, 168, 1, 1);
+    ///     let end = Ipv4Addr::new(192, 168, 3, 254);
+    ///     let ips = CrossIpv4Pool::new(start, end).unwrap();
+    ///     for i in ips {
+    ///         println!("{:?}", i);
+    ///     }
+    /// }
+    /// ```
+    pub fn new(start: Ipv4Addr, end: Ipv4Addr) -> Result<CrossIpv4Pool, InvalidInputError> {
+        let start_ipv4 = Ipv4::new(start);
+        let end_ipv4 = Ipv4::new(end);
+        if start_ipv4.addr <= end_ipv4.addr {
+            let cip = CrossIpv4Pool {
+                start: start_ipv4.addr,
+                end: end_ipv4.addr,
+                next: start_ipv4.addr,
+            };
+            Ok(cip)
+        } else {
+            let msg = format!("{}-{}", start, end);
+            Err(InvalidInputError { msg })
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ipv4Pool {
-    prefix: u32,
-    mask: u32,
-    next: u32,
-    stop: u32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Ipv4 {
-    addr: u32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Ipv6Pool {
-    prefix: u128,
-    mask: u128,
-    next: u128,
-    stop: u128,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Ipv6 {
-    addr: u128,
+    pub prefix: u32,
+    pub mask: u32,
+    pub next: u32,
+    pub stop: u32,
 }
 
 impl Iterator for Ipv4Pool {
@@ -60,49 +108,9 @@ impl Iterator for Ipv4Pool {
     }
 }
 
-impl Iterator for Ipv6Pool {
-    type Item = Ipv6Addr;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.next < self.stop {
-            let ret = self.prefix + self.next;
-            self.next += 1;
-            Some(ret.into())
-        } else {
-            None
-        }
-    }
-}
-
-impl fmt::Display for Ipv4 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let addr: Ipv4Addr = self.addr.into();
-        write!(f, "{}", addr)
-    }
-}
-
-impl fmt::Display for Ipv6 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let addr: Ipv6Addr = self.addr.into();
-        write!(f, "{}", addr)
-    }
-}
-
 impl fmt::Display for Ipv4Pool {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let prefix: Ipv4Addr = self.prefix.into();
-        let mut prefix_length = 0;
-        let mut mask = self.mask;
-        while mask != 0 {
-            mask <<= 1;
-            prefix_length += 1;
-        }
-        write!(f, "{}/{}", prefix, prefix_length)
-    }
-}
-
-impl fmt::Display for Ipv6Pool {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let prefix: Ipv6Addr = self.prefix.into();
         let mut prefix_length = 0;
         let mut mask = self.mask;
         while mask != 0 {
@@ -132,9 +140,7 @@ impl Ipv4Pool {
     pub fn new(address: Ipv4Addr, prefix_length: u8) -> Result<Ipv4Pool, InvalidInputError> {
         if prefix_length > 32 {
             let error_addr = format!("{}/{}", address, prefix_length);
-            Err(InvalidInputError {
-                msg: error_addr,
-            })
+            Err(InvalidInputError { msg: error_addr })
         } else {
             let addr: u32 = address.into();
             let mut mask: u32 = u32::MAX;
@@ -265,15 +271,113 @@ impl Ipv4Pool {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct CrossIpv6Pool {
+    pub start: u128,
+    pub end: u128,
+    pub next: u128,
+}
+
+impl Iterator for CrossIpv6Pool {
+    type Item = Ipv6Addr;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.next <= self.end {
+            let ret = self.next;
+            self.next += 1;
+            Some(ret.into())
+        } else {
+            None
+        }
+    }
+}
+
+impl fmt::Display for CrossIpv6Pool {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let start: Ipv6Addr = self.start.into();
+        let end: Ipv6Addr = self.end.into();
+        write!(f, "{}-{}", start, end)
+    }
+}
+
+impl CrossIpv6Pool {
+    /// Returns an Ipv4 iterator over the cross different subnetwork addresses.
+    ///
+    /// # Example
+    /// ```
+    /// use subnetwork::CrossIpv6Pool;
+    /// use std::net::Ipv6Addr;
+    ///
+    /// fn main() {
+    ///     let start = Ipv6Addr::from("fe80::215:5dff:fe20:b393"),unwrap();
+    ///     let end = Ipv6Addr::from("fe80::215:5dff:fe20:b395"),unwrap();
+    ///     let ips = CrossIpv6Pool::new(start, end).unwrap();
+    ///     for i in ips {
+    ///         println!("{:?}", i);
+    ///     }
+    /// }
+    /// ```
+    pub fn new(start: Ipv6Addr, end: Ipv6Addr) -> Result<CrossIpv6Pool, InvalidInputError> {
+        let start_ipv6 = Ipv6::new(start);
+        let end_ipv6 = Ipv6::new(end);
+        if start_ipv6.addr <= end_ipv6.addr {
+            let cip = CrossIpv6Pool {
+                start: start_ipv6.addr,
+                end: end_ipv6.addr,
+                next: start_ipv6.addr,
+            };
+            Ok(cip)
+        } else {
+            let msg = format!("{}-{}", start, end);
+            Err(InvalidInputError { msg })
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Ipv6Pool {
+    pub prefix: u128,
+    pub mask: u128,
+    pub next: u128,
+    pub stop: u128,
+}
+
+impl Iterator for Ipv6Pool {
+    type Item = Ipv6Addr;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.next < self.stop {
+            let ret = self.prefix + self.next;
+            self.next += 1;
+            Some(ret.into())
+        } else {
+            None
+        }
+    }
+}
+
+impl fmt::Display for Ipv6Pool {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let prefix: Ipv6Addr = self.prefix.into();
+        let mut prefix_length = 0;
+        let mut mask = self.mask;
+        while mask != 0 {
+            mask <<= 1;
+            prefix_length += 1;
+        }
+        write!(f, "{}/{}", prefix, prefix_length)
+    }
+}
+
 impl Ipv6Pool {
     /// Returns an Ipv6 iterator over the addresses contained in the network.
     ///
     /// # Example
     /// ```
     /// use subnetwork::Ipv6Pool;
+    /// use std::net::Ipv6Addr;
     ///
     /// fn main() {
-    ///     let ips = Ipv6Pool::from("::ffff:192.10.2.0/120").unwrap();
+    ///     let ipv6 = Ipv6Addr::parse("::ffff:192.10.2.0").unwrap();
+    ///     let ips = Ipv6Pool::new(ipv6, 120).unwrap();
     ///     for i in ips {
     ///         println!("{:?}", i);
     ///     }
@@ -282,9 +386,7 @@ impl Ipv6Pool {
     pub fn new(address: Ipv6Addr, prefix_length: u8) -> Result<Ipv6Pool, InvalidInputError> {
         if prefix_length > 128 {
             let error_addr = format!("{}/{}", address, prefix_length);
-            Err(InvalidInputError {
-                msg: error_addr,
-            })
+            Err(InvalidInputError { msg: error_addr })
         } else {
             let addr: u128 = address.into();
             let mut mask: u128 = u128::MAX;
@@ -405,6 +507,18 @@ impl Ipv6Pool {
     pub fn len(&self) -> usize {
         let length = !self.mask - 1;
         length as usize
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Ipv4 {
+    pub addr: u32,
+}
+
+impl fmt::Display for Ipv4 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let addr: Ipv4Addr = self.addr.into();
+        write!(f, "{}", addr)
     }
 }
 
@@ -587,6 +701,18 @@ impl Ipv4 {
             mask >>= 1;
         }
         count
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Ipv6 {
+    pub addr: u128,
+}
+
+impl fmt::Display for Ipv6 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let addr: Ipv6Addr = self.addr.into();
+        write!(f, "{}", addr)
     }
 }
 
@@ -784,6 +910,16 @@ impl Ipv6 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    /******************** cross ipv4 ********************/
+    #[test]
+    fn cross_ipv4_pool_print() {
+        let start = Ipv4Addr::new(192, 168, 1, 1);
+        let end = Ipv4Addr::new(192, 168, 3, 254);
+        let ips = CrossIpv4Pool::new(start, end).unwrap();
+        for i in ips {
+            println!("{:?}", i);
+        }
+    }
     /******************** ipv4 ********************/
     #[test]
     fn ipv4_pool_print() {
