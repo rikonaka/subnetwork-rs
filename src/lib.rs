@@ -308,8 +308,10 @@ impl CrossIpv6Pool {
     /// use std::net::Ipv6Addr;
     ///
     /// fn main() {
-    ///     let start = Ipv6Addr::from("fe80::215:5dff:fe20:b393"),unwrap();
-    ///     let end = Ipv6Addr::from("fe80::215:5dff:fe20:b395"),unwrap();
+    ///     let start_str = "fe80::215:5dff:fe20:b393";
+    ///     let end_str = "fe80::215:5dff:fe20:b395";
+    ///     let start: Ipv6Addr = start_str.parse().unwrap();
+    ///     let end: Ipv6Addr = end_str.parse().unwrap();
     ///     let ips = CrossIpv6Pool::new(start, end).unwrap();
     ///     for i in ips {
     ///         println!("{:?}", i);
@@ -376,7 +378,8 @@ impl Ipv6Pool {
     /// use std::net::Ipv6Addr;
     ///
     /// fn main() {
-    ///     let ipv6 = Ipv6Addr::parse("::ffff:192.10.2.0").unwrap();
+    ///     let ipv6_str = "::ffff:192.10.2.0";
+    ///     let ipv6: Ipv6Addr = ipv6_str.parse().unwrap();
     ///     let ips = Ipv6Pool::new(ipv6, 120).unwrap();
     ///     for i in ips {
     ///         println!("{:?}", i);
