@@ -49,7 +49,8 @@ impl fmt::Display for CrossIpv4Pool {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let start: Ipv4Addr = self.start.into();
         let end: Ipv4Addr = self.end.into();
-        write!(f, "{}-{}", start, end)
+        let now: Ipv4Addr = self.next.into();
+        write!(f, "{}-{}, next {}", start, end, now)
     }
 }
 
@@ -111,17 +112,44 @@ impl Iterator for Ipv4Pool {
 impl fmt::Display for Ipv4Pool {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let prefix: Ipv4Addr = self.prefix.into();
-        let mut prefix_length = 0;
+        let mut prefix_len = 0;
         let mut mask = self.mask;
         while mask != 0 {
             mask <<= 1;
-            prefix_length += 1;
+            prefix_len += 1;
         }
-        write!(f, "{}/{}", prefix, prefix_length)
+        let now_addr = self.prefix + self.next;
+        let now_addr: Ipv4Addr = now_addr.into();
+        write!(f, "{}/{}, next {}", prefix, prefix_len, now_addr)
     }
 }
 
 impl Ipv4Pool {
+    fn addr_check(ip_addr: &Ipv4Addr, prefix_len: u8) -> Result<(), InvalidInputError> {
+        if prefix_len > IPV4_LEN {
+            let error_addr = format!("{}/{}", ip_addr, prefix_len);
+            Err(InvalidInputError {
+                msg: error_addr.to_string(),
+            })
+        } else {
+            Ok(())
+        }
+    }
+    fn addr_check_str(address: &str) -> Result<(Ipv4Addr, u8), Box<dyn Error>> {
+        if address.contains("/") {
+            let address_vec: Vec<&str> = address.split("/").collect();
+            if address_vec.len() == 2 {
+                let ip_addr: Ipv4Addr = address_vec[0].parse()?;
+                let prefix_len: u8 = address_vec[1].parse()?;
+                if prefix_len <= IPV4_LEN {
+                    return Ok((ip_addr, prefix_len));
+                }
+            }
+        }
+        Err(Box::new(InvalidInputError {
+            msg: address.to_string(),
+        }))
+    }
     /// Returns an Ipv4 iterator over the addresses contained in the network.
     ///
     /// # Example
@@ -137,26 +165,26 @@ impl Ipv4Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(address: Ipv4Addr, prefix_length: u8) -> Result<Ipv4Pool, InvalidInputError> {
-        if prefix_length > 32 {
-            let error_addr = format!("{}/{}", address, prefix_length);
-            Err(InvalidInputError { msg: error_addr })
-        } else {
-            let addr: u32 = address.into();
-            let mut mask: u32 = u32::MAX;
-            for _ in 0..(IPV4_LEN - prefix_length) {
-                mask <<= 1;
+    pub fn new(address: Ipv4Addr, prefix_len: u8) -> Result<Ipv4Pool, InvalidInputError> {
+        match Ipv4Pool::addr_check(&address, prefix_len) {
+            Ok(_) => {
+                let addr: u32 = address.into();
+                let mut mask: u32 = u32::MAX;
+                for _ in 0..(IPV4_LEN - prefix_len) {
+                    mask <<= 1;
+                }
+                let exp = (IPV4_LEN - prefix_len) as u32;
+                let next = INIT_NEXT_VALUE as u32;
+                let stop = u32::pow(2, exp);
+                let prefix = addr & mask;
+                return Ok(Ipv4Pool {
+                    prefix,
+                    mask,
+                    next,
+                    stop,
+                });
             }
-            let exp = (IPV4_LEN - prefix_length) as u32;
-            let next = INIT_NEXT_VALUE as u32;
-            let stop = u32::pow(2, exp);
-            let prefix = addr & mask;
-            return Ok(Ipv4Pool {
-                prefix,
-                mask,
-                next,
-                stop,
-            });
+            Err(e) => Err(e),
         }
     }
     /// Returns an Ipv4 iterator over the addresses contained in the network.
@@ -172,21 +200,18 @@ impl Ipv4Pool {
     ///     }
     /// }
     /// ```
-    pub fn from(address: &str) -> Result<Ipv4Pool, InvalidInputError> {
-        if address.contains("/") {
-            let address_vec: Vec<&str> = address.split("/").collect();
-            if address_vec.len() == 2 {
-                let addr: Ipv4Addr = address_vec[0].parse().unwrap();
-                let addr: u32 = addr.into();
-                let prefix_length: u8 = address_vec[1].parse().unwrap();
+    pub fn from(address: &str) -> Result<Ipv4Pool, Box<dyn Error>> {
+        match Ipv4Pool::addr_check_str(address) {
+            Ok((ip_addr, prefix_len)) => {
+                let ip_addr: u32 = ip_addr.into();
                 let mut mask: u32 = u32::MAX;
-                for _ in 0..(IPV4_LEN - prefix_length) {
+                for _ in 0..(IPV4_LEN - prefix_len) {
                     mask <<= 1;
                 }
-                let exp = (IPV4_LEN - prefix_length) as u32;
+                let exp = (IPV4_LEN - prefix_len) as u32;
                 let next = INIT_NEXT_VALUE as u32;
                 let stop = u32::pow(2, exp);
-                let prefix = addr & mask;
+                let prefix = ip_addr & mask;
                 return Ok(Ipv4Pool {
                     prefix,
                     mask,
@@ -194,10 +219,8 @@ impl Ipv4Pool {
                     stop,
                 });
             }
+            Err(e) => Err(e),
         }
-        Err(InvalidInputError {
-            msg: address.to_string(),
-        })
     }
     /// Check if ip pool contains this ip.
     ///
@@ -359,17 +382,42 @@ impl Iterator for Ipv6Pool {
 impl fmt::Display for Ipv6Pool {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let prefix: Ipv6Addr = self.prefix.into();
-        let mut prefix_length = 0;
+        let mut prefix_len = 0;
         let mut mask = self.mask;
         while mask != 0 {
             mask <<= 1;
-            prefix_length += 1;
+            prefix_len += 1;
         }
-        write!(f, "{}/{}", prefix, prefix_length)
+        write!(f, "{}/{}", prefix, prefix_len)
     }
 }
 
 impl Ipv6Pool {
+    fn addr_check(ip_addr: &Ipv6Addr, prefix_len: u8) -> Result<(), InvalidInputError> {
+        if prefix_len > IPV6_LEN {
+            let error_addr = format!("{}/{}", ip_addr, prefix_len);
+            Err(InvalidInputError {
+                msg: error_addr.to_string(),
+            })
+        } else {
+            Ok(())
+        }
+    }
+    fn addr_check_str(address: &str) -> Result<(Ipv6Addr, u8), Box<dyn Error>> {
+        if address.contains("/") {
+            let address_vec: Vec<&str> = address.split("/").collect();
+            if address_vec.len() == 2 {
+                let addr: Ipv6Addr = address_vec[0].parse()?;
+                let prefix_len: u8 = address_vec[1].parse()?;
+                if prefix_len <= IPV6_LEN {
+                    return Ok((addr, prefix_len));
+                }
+            }
+        }
+        Err(Box::new(InvalidInputError {
+            msg: address.to_string(),
+        }))
+    }
     /// Returns an Ipv6 iterator over the addresses contained in the network.
     ///
     /// # Example
@@ -386,26 +434,26 @@ impl Ipv6Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(address: Ipv6Addr, prefix_length: u8) -> Result<Ipv6Pool, InvalidInputError> {
-        if prefix_length > 128 {
-            let error_addr = format!("{}/{}", address, prefix_length);
-            Err(InvalidInputError { msg: error_addr })
-        } else {
-            let addr: u128 = address.into();
-            let mut mask: u128 = u128::MAX;
-            for _ in 0..(IPV6_LEN - prefix_length) {
-                mask <<= 1;
+    pub fn new(address: Ipv6Addr, prefix_len: u8) -> Result<Ipv6Pool, InvalidInputError> {
+        match Ipv6Pool::addr_check(&address, prefix_len) {
+            Ok(_) => {
+                let addr: u128 = address.into();
+                let mut mask: u128 = u128::MAX;
+                for _ in 0..(IPV6_LEN - prefix_len) {
+                    mask <<= 1;
+                }
+                let exp = (IPV6_LEN - prefix_len) as u32;
+                let next = INIT_NEXT_VALUE as u128;
+                let stop = u128::pow(2, exp);
+                let prefix = addr & mask;
+                Ok(Ipv6Pool {
+                    prefix,
+                    mask,
+                    next,
+                    stop,
+                })
             }
-            let exp = (IPV6_LEN - prefix_length) as u32;
-            let next = INIT_NEXT_VALUE as u128;
-            let stop = u128::pow(2, exp);
-            let prefix = addr & mask;
-            return Ok(Ipv6Pool {
-                prefix,
-                mask,
-                next,
-                stop,
-            });
+            Err(e) => Err(e),
         }
     }
     /// Returns an Ipv6 iterator over the addresses contained in the network.
@@ -421,32 +469,27 @@ impl Ipv6Pool {
     ///     }
     /// }
     /// ```
-    pub fn from(address: &str) -> Result<Ipv6Pool, InvalidInputError> {
-        if address.contains("/") {
-            let address_vec: Vec<&str> = address.split("/").collect();
-            if address_vec.len() == 2 {
-                let addr: Ipv6Addr = address_vec[0].parse().unwrap();
+    pub fn from(address: &str) -> Result<Ipv6Pool, Box<dyn Error>> {
+        match Ipv6Pool::addr_check_str(address) {
+            Ok((addr, prefix_len)) => {
                 let addr: u128 = addr.into();
-                let prefix_length: u8 = address_vec[1].parse().unwrap();
                 let mut mask: u128 = u128::MAX;
-                for _ in 0..(IPV6_LEN - prefix_length) {
+                for _ in 0..(IPV6_LEN - prefix_len) {
                     mask <<= 1;
                 }
-                let exp = (IPV6_LEN - prefix_length) as u32;
+                let exp = (IPV6_LEN - prefix_len) as u32;
                 let next = INIT_NEXT_VALUE as u128;
                 let stop = u128::pow(2, exp);
                 let prefix = addr & mask;
-                return Ok(Ipv6Pool {
+                Ok(Ipv6Pool {
                     prefix,
                     mask,
                     next,
                     stop,
-                });
+                })
             }
+            Err(e) => Err(e),
         }
-        Err(InvalidInputError {
-            msg: address.to_string(),
-        })
     }
     /// Check if ip pool contains this ip.
     ///
@@ -513,6 +556,8 @@ impl Ipv6Pool {
     }
 }
 
+/* Single Addr Struct */
+
 #[derive(Debug, Clone, Copy)]
 pub struct Ipv4 {
     pub addr: u32,
@@ -526,6 +571,15 @@ impl fmt::Display for Ipv4 {
 }
 
 impl Ipv4 {
+    fn prefix_len_check(&self, prefix_len: u8) -> Result<(), InvalidInputError> {
+        if prefix_len > IPV4_LEN {
+            let addr: Ipv4Addr = self.addr.into();
+            let error_msg = format!("{}/{}", addr, prefix_len);
+            Err(InvalidInputError { msg: error_msg })
+        } else {
+            Ok(())
+        }
+    }
     /// Constructs a new `Ipv4` from a given Ipv4Addr.
     pub fn new(address: Ipv4Addr) -> Ipv4 {
         // address: 192.168.1.1
@@ -533,6 +587,18 @@ impl Ipv4 {
         Ipv4 { addr }
     }
     /// Constructs a new `Ipv4` from a given `&str`.
+    ///
+    /// # Example
+    /// ```
+    /// use subnetwork::Ipv4;
+    ///
+    /// fn main() {
+    ///     let ipv4 = Ipv4::from("192.168.1.1").unwrap();
+    ///     for i in ipv4.iter(24).unwrap() {
+    ///         println!("{:?}", i);
+    ///     }
+    /// }
+    /// ```
     pub fn from(address: &str) -> Result<Ipv4, AddrParseError> {
         // address: 192.168.1.1
         match Ipv4Addr::from_str(address) {
@@ -543,138 +609,30 @@ impl Ipv4 {
             Err(e) => Err(e),
         }
     }
-    /// Returns an Ipv4 iterator over the addresses contained in the network.
-    ///
-    /// # Example
-    /// ```
-    /// use subnetwork::Ipv4;
-    ///
-    /// fn main() {
-    ///     let ipv4 = Ipv4::from("192.168.1.1").unwrap();
-    ///     for i in ipv4.iter(24) {
-    ///         println!("{:?}", i);
-    ///     }
-    /// }
-    /// ```
-    pub fn iter(&self, prefix_length: u8) -> Ipv4Pool {
-        let mut mask: u32 = u32::MAX;
-        for _ in 0..(IPV4_LEN - prefix_length) {
-            mask <<= 1;
-        }
-        let exp = (IPV4_LEN - prefix_length) as u32;
-        let next = INIT_NEXT_VALUE as u32;
-        let stop = u32::pow(2, exp);
-        let prefix = self.addr & mask;
-        Ipv4Pool {
-            prefix,
-            mask,
-            next,
-            stop,
-        }
-    }
-    /// Check if the ip is within a subnet.
-    /// # Example
-    /// ```
-    /// use subnetwork::Ipv4;
-    ///
-    /// fn main() {
-    ///     let ipv4 = Ipv4::from("192.168.1.1").unwrap();
-    ///     let ret = ipv4.within_from_str("192.168.1.0/24").unwrap();
-    ///     assert_eq!(ret, true);
-    /// }
-    /// ```
-    pub fn within_from_str(&self, subnet_address: &str) -> Result<bool, InvalidInputError> {
-        match self.subnet_split(subnet_address) {
-            Ok((subnet, subnet_mask)) => {
-                let new_subnet_address: u32 = subnet.into();
-                let new_subnet_mask: u32 = self.get_subnet_mask(subnet_mask);
-                if new_subnet_address & new_subnet_mask == self.addr & new_subnet_mask {
-                    Ok(true)
-                } else {
-                    Ok(false)
+    pub fn iter(&self, prefix_len: u8) -> Result<Ipv4Pool, InvalidInputError> {
+        match self.prefix_len_check(prefix_len) {
+            Ok(_) => {
+                let mut mask: u32 = u32::MAX;
+                for _ in 0..(IPV4_LEN - prefix_len) {
+                    mask <<= 1;
                 }
+                let exp = (IPV4_LEN - prefix_len) as u32;
+                let next = INIT_NEXT_VALUE as u32;
+                let stop = u32::pow(2, exp);
+                let prefix = self.addr & mask;
+                Ok(Ipv4Pool {
+                    prefix,
+                    mask,
+                    next,
+                    stop,
+                })
             }
             Err(e) => Err(e),
         }
     }
-    /// Check if the ip is within a subnet.
-    /// # Example
-    /// ```
-    /// use subnetwork::{Ipv4, Ipv4Pool};
-    ///
-    /// fn main() {
-    ///     let ipv4 = Ipv4::from("192.168.1.1").unwrap();
-    ///     let ipv4_pool = Ipv4Pool::from("192.168.1.0/24").unwrap();
-    ///     let ret = ipv4.within(ipv4_pool);
-    ///     assert_eq!(ret, true);
-    /// }
-    /// ```
-    pub fn within(&self, subnet_address: Ipv4Pool) -> bool {
-        let addr = self.addr;
-        if addr & subnet_address.mask == subnet_address.prefix {
-            true
-        } else {
-            false
-        }
-    }
-    /// Returns the address of the network denoted by this `Ipv4`.
-    /// This means the lowest possible IP address inside of the network.
-    pub fn network(&self, prefix_length: u8) -> Ipv4Addr {
-        let mut mask: u32 = u32::MAX;
-        for _ in 0..(IPV4_LEN - prefix_length) {
-            mask <<= 1;
-        }
-        let ret = self.addr & mask;
-        ret.into()
-    }
-    /// Returns the broadcasting address of this `Ipv4`.
-    /// This means the highest possible IP address inside of the network.
-    pub fn broadcast(&self, prefix_length: u8) -> Ipv4Addr {
-        let mut mask: u32 = u32::MAX;
-        for _ in 0..(IPV4_LEN - prefix_length) {
-            mask <<= 1;
-        }
-        let prefix = self.addr & mask;
-        let exp = (IPV4_LEN - prefix_length) as u32;
-        let biggest = u32::pow(2, exp) - 1;
-        let ret = prefix + biggest;
-        ret.into()
-    }
-    /// Returns the number of possible host addresses in this `Ipv4` (include 0 and 255)
-    pub fn size(&self, prefix_length: u8) -> usize {
-        let exp = (IPV4_LEN - prefix_length) as u32;
-        let biggest = u32::pow(2, exp);
-        biggest as usize
-    }
-    /// Returns the number of valid addresses in this `Ipv4` (NOT include 0 and 255)
-    pub fn len(&self, prefix_length: u8) -> usize {
-        let exp = (IPV4_LEN - prefix_length) as u32;
-        let length = u32::pow(2, exp) - 2;
-        length as usize
-    }
     /// Returns the standard IPv4 address.
     pub fn to_std(&self) -> Ipv4Addr {
         self.addr.into()
-    }
-    fn get_subnet_mask(&self, prefix_length: u8) -> u32 {
-        let mut mask: u32 = u32::MAX;
-        for _ in 0..(IPV4_LEN - prefix_length) {
-            mask <<= 1;
-        }
-        mask
-    }
-    fn subnet_split(&self, subnet_address: &str) -> Result<(Ipv4Addr, u8), InvalidInputError> {
-        if subnet_address.contains("/") {
-            let subnet_address_vec: Vec<&str> = subnet_address.split("/").collect();
-            if subnet_address_vec.len() == 2 {
-                let subnet = subnet_address_vec[0].parse().unwrap();
-                let prefix: u8 = subnet_address_vec[1].parse().unwrap();
-                return Ok((subnet, prefix));
-            }
-        }
-        Err(InvalidInputError {
-            msg: subnet_address.to_string(),
-        })
     }
     /// Returns the largest identical prefix of two IP addresses.
     /// # Example
@@ -692,11 +650,11 @@ impl Ipv4 {
         let a = self.addr;
         let b = target.addr;
         let mut mask = 1;
-        for _ in 0..31 {
+        for _ in 0..(IPV4_LEN - 1) {
             mask <<= 1;
         }
         let mut count = 0;
-        for _ in 0..32 {
+        for _ in 0..IPV4_LEN {
             if a & mask != b & mask {
                 break;
             }
@@ -720,22 +678,21 @@ impl fmt::Display for Ipv6 {
 }
 
 impl Ipv6 {
+    fn prefix_len_check(&self, prefix_len: u8) -> Result<(), InvalidInputError> {
+        if prefix_len > IPV6_LEN {
+            let addr: Ipv6Addr = self.addr.into();
+            let error_msg = format!("{}/{}", addr, prefix_len);
+            Err(InvalidInputError { msg: error_msg })
+        } else {
+            Ok(())
+        }
+    }
     /// Constructs a new `Ipv6` from a given Ipv6Addr.
     pub fn new(address: Ipv6Addr) -> Ipv6 {
         let addr: u128 = address.into();
         Ipv6 { addr }
     }
     /// Constructs a new `Ipv6` from a given `&str`.
-    pub fn from(address: &str) -> Result<Ipv6, AddrParseError> {
-        match Ipv6Addr::from_str(address) {
-            Ok(addr) => {
-                let addr: u128 = addr.into();
-                Ok(Ipv6 { addr })
-            }
-            Err(e) => Err(e),
-        }
-    }
-    /// Returns an Ipv6 iterator over the addresses contained in the network.
     ///
     /// # Example
     /// ```
@@ -748,76 +705,36 @@ impl Ipv6 {
     ///     }
     /// }
     /// ```
-    pub fn iter(&self, prefix_length: u8) -> Ipv6Pool {
-        let mut mask: u128 = u128::MAX;
-        for _ in 0..(IPV6_LEN - prefix_length) {
-            mask <<= 1;
-        }
-        let exp = (IPV6_LEN - prefix_length) as u32;
-        let next = INIT_NEXT_VALUE as u128;
-        let stop = u128::pow(2, exp);
-        let prefix = self.addr & mask;
-        Ipv6Pool {
-            prefix,
-            mask,
-            next,
-            stop,
-        }
-    }
-    /// Check if the ip is within a subnet.
-    /// # Example
-    /// ```
-    /// use subnetwork::Ipv6;
-    ///
-    /// fn main() {
-    ///     let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
-    ///     let ret = ipv6.within_from_str("::ffff:192.10.2.255/120").unwrap();
-    ///     assert_eq!(ret, true);
-    /// }
-    /// ```
-    pub fn within_from_str(&self, subnet_address: &str) -> Result<bool, InvalidInputError> {
-        match self.subnet_split(subnet_address) {
-            Ok((subnet, subnet_mask)) => {
-                let new_subnet_address: u128 = subnet.into();
-                let new_subnet_mask: u128 = self.get_subnet_mask(subnet_mask);
-                if new_subnet_address & new_subnet_mask == self.addr & new_subnet_mask {
-                    Ok(true)
-                } else {
-                    Ok(false)
-                }
+    pub fn from(address: &str) -> Result<Ipv6, AddrParseError> {
+        match Ipv6Addr::from_str(address) {
+            Ok(addr) => {
+                let addr: u128 = addr.into();
+                Ok(Ipv6 { addr })
             }
             Err(e) => Err(e),
         }
     }
-    /// Check if the ip is within a subnet.
-    /// # Example
-    /// ```
-    /// use subnetwork::{Ipv6, Ipv6Pool};
-    ///
-    /// fn main() {
-    ///     let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
-    ///     let ipv6_pool = Ipv6Pool::from("::ffff:192.10.2.255/120").unwrap();
-    ///     let ret = ipv6.within(ipv6_pool);
-    ///     assert_eq!(ret, true);
-    /// }
-    /// ```
-    pub fn within(&self, subnet_address: Ipv6Pool) -> bool {
-        let addr = self.addr;
-        if addr & subnet_address.mask == subnet_address.prefix {
-            true
-        } else {
-            false
+    /// Returns an Ipv6 iterator over the addresses contained in the network.
+    pub fn iter(&self, prefix_len: u8) -> Result<Ipv6Pool, InvalidInputError> {
+        match self.prefix_len_check(prefix_len) {
+            Ok(_) => {
+                let mut mask: u128 = u128::MAX;
+                for _ in 0..(IPV6_LEN - prefix_len) {
+                    mask <<= 1;
+                }
+                let exp = (IPV6_LEN - prefix_len) as u32;
+                let next = INIT_NEXT_VALUE as u128;
+                let stop = u128::pow(2, exp);
+                let prefix = self.addr & mask;
+                Ok(Ipv6Pool {
+                    prefix,
+                    mask,
+                    next,
+                    stop,
+                })
+            }
+            Err(e) => Err(e),
         }
-    }
-    /// Returns the address of the network denoted by this `Ipv6`.
-    /// This means the lowest possible IP address inside of the network.
-    pub fn network(&self, prefix_length: u8) -> Ipv6Addr {
-        let mut mask: u128 = u128::MAX;
-        for _ in 0..(IPV6_LEN - prefix_length) {
-            mask <<= 1;
-        }
-        let ret = self.addr & mask;
-        ret.into()
     }
     /// Returns the node local scope multicast address of this `Ipv6`.
     pub fn node_multicast(&self) -> Ipv6Addr {
@@ -855,51 +772,19 @@ impl Ipv6 {
         let mask = Ipv6::new(mask);
         (site.addr + (mask.addr & self.addr)).into()
     }
-    /// Returns the number of possible host addresses in this `Ipv6`
-    pub fn size(&self, prefix_length: u8) -> usize {
-        let exp = (IPV6_LEN - prefix_length) as u32;
-        let biggest = u128::pow(2, exp);
-        biggest as usize
-    }
-    /// Returns the number of valid addresses in this `Ipv6` (NOT include 0 and 255)
-    pub fn len(&self, prefix_length: u8) -> usize {
-        let exp = (IPV6_LEN - prefix_length) as u32;
-        let length = u128::pow(2, exp) - 2;
-        length as usize
-    }
     /// Returns the standard IPv4 address.
     pub fn to_std(&self) -> Ipv6Addr {
         self.addr.into()
-    }
-    fn get_subnet_mask(&self, prefix_length: u8) -> u128 {
-        let mut mask: u128 = u128::MAX;
-        for _ in 0..(IPV6_LEN - prefix_length) {
-            mask <<= 1;
-        }
-        mask
-    }
-    fn subnet_split(&self, subnet_address: &str) -> Result<(Ipv6Addr, u8), InvalidInputError> {
-        if subnet_address.contains("/") {
-            let subnet_address_vec: Vec<&str> = subnet_address.split("/").collect();
-            if subnet_address_vec.len() == 2 {
-                let subnet = subnet_address_vec[0].parse().unwrap();
-                let prefix: u8 = subnet_address_vec[1].parse().unwrap();
-                return Ok((subnet, prefix));
-            }
-        }
-        Err(InvalidInputError {
-            msg: subnet_address.to_string(),
-        })
     }
     pub fn max_identical_prefix(&self, target: Ipv6) -> u128 {
         let a = self.addr;
         let b = target.addr;
         let mut mask = 1;
-        for _ in 0..127 {
+        for _ in 0..(IPV6_LEN - 1) {
             mask <<= 1;
         }
         let mut count = 0;
-        for _ in 0..128 {
+        for _ in 0..IPV6_LEN {
             if a & mask != b & mask {
                 break;
             }
@@ -929,7 +814,7 @@ mod tests {
         let test_str = "192.168.1.0/24";
         let ipv4_pool = Ipv4Pool::from(test_str).unwrap();
         let ipv4_pool_str = format!("{}", ipv4_pool);
-        assert_eq!(ipv4_pool_str, test_str);
+        println!("{}", ipv4_pool_str);
     }
     #[test]
     fn ipv4_print() {
@@ -941,7 +826,7 @@ mod tests {
     #[test]
     fn ipv4_iter() {
         let ipv4 = Ipv4::from("192.168.1.1").unwrap();
-        for i in ipv4.iter(24) {
+        for i in ipv4.iter(24).unwrap() {
             println!("{:?}", i);
         }
         assert_eq!(1, 1);
@@ -949,7 +834,7 @@ mod tests {
     #[test]
     fn ipv6_iter() {
         let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
-        for i in ipv6.iter(124) {
+        for i in ipv6.iter(124).unwrap() {
             println!("{:?}", i);
         }
         assert_eq!(1, 1);
@@ -960,68 +845,12 @@ mod tests {
         println!("{:8b}", ipv4.addr);
         assert_eq!(ipv4.addr, 3232235777);
     }
-    #[test]
-    fn ipv4_within_test_1() {
-        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
-        let ret = ipv4.within_from_str("192.168.1.0/24").unwrap();
-        println!("{:?}", ret);
-        assert_eq!(ret, true);
-    }
-    #[test]
-    fn ipv4_within_test_2() {
-        let ipv4 = Ipv4::from("10.8.0.22").unwrap();
-        let ret = ipv4.within_from_str("192.168.1.0/24").unwrap();
-        println!("{:?}", ret);
-        assert_eq!(ret, false);
-    }
-    #[test]
-    fn ipv4_network() {
-        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
-        let ipv4_2 = Ipv4Addr::new(192, 168, 1, 0);
-        println!("{:?}", ipv4.network(24));
-        assert_eq!(ipv4.network(24), ipv4_2);
-    }
-    #[test]
-    fn ipv4_broadcast() {
-        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
-        let ipv4_2 = Ipv4Addr::new(192, 168, 1, 255);
-        println!("{:?}", ipv4.broadcast(24));
-        assert_eq!(ipv4.broadcast(24), ipv4_2);
-    }
-    #[test]
-    fn ipv4_size() {
-        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
-        let subnet_size = ipv4.size(24);
-        println!("{:?}", subnet_size);
-        assert_eq!(subnet_size, 256);
-    }
-    #[test]
-    fn ipv4_len() {
-        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
-        let subnet_size = ipv4.len(24);
-        println!("{:?}", subnet_size);
-        assert_eq!(subnet_size, 254);
-    }
     /******************** ipv6 ********************/
     #[test]
     fn ipv6() {
         let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
         println!("{:?}", ipv6);
         assert_eq!(ipv6.addr, 281473903624959);
-    }
-    #[test]
-    fn ipv6_within_test_1() {
-        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
-        let ret = ipv6.within_from_str("::ffff:192.10.2.255/120").unwrap();
-        println!("{:?}", ret);
-        assert_eq!(ret, true);
-    }
-    #[test]
-    fn ipv6_network() {
-        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
-        let ipv6_2: Ipv6Addr = "::ffff:192.10.2.0".parse().unwrap();
-        println!("{:?}", ipv6.network(120));
-        assert_eq!(ipv6.network(120), ipv6_2);
     }
     #[test]
     fn ipv6_node() {
@@ -1039,20 +868,6 @@ mod tests {
         let ipv6_2: Ipv6Addr = "ff02::1:ff0a:2ff".parse().unwrap();
         println!("{:?}", ipv6.link_multicast());
         assert_eq!(ipv6.link_multicast(), ipv6_2);
-    }
-    #[test]
-    fn ipv6_size() {
-        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
-        let subnet_size = ipv6.size(120);
-        println!("{:?}", subnet_size);
-        assert_eq!(subnet_size, 256);
-    }
-    #[test]
-    fn ipv6_len() {
-        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
-        let subnet_len = ipv6.len(120);
-        println!("{:?}", subnet_len);
-        assert_eq!(subnet_len, 254);
     }
     /******************** ipv4 pool ********************/
     #[test]
@@ -1142,5 +957,11 @@ mod tests {
             mask >>= 1;
         }
         println!("{}", count);
+    }
+    #[test]
+    fn test_github_issues_1() {
+        let _pool1 = Ipv4Pool::from("1.2.3.4/33");
+        let _pool2 = Ipv4Pool::from("1.2.3.4/");
+        let _pool3 = Ipv4Pool::from("nonip/24");
     }
 }

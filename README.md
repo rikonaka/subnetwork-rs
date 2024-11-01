@@ -15,8 +15,6 @@ fn main() {
     for i in ipv4_pool {
         println!("{:?}", i);
     }
-    let ret = ipv4_pool.contain_from_str("192.168.1.200").unwrap();
-    assert_eq!(ret, true);
     let ipv4 = Ipv4Addr::new(192, 168, 1, 1);
     let ret = ipv4_pool.contain(ipv4);
     assert_eq!(ret, true);
