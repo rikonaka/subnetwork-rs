@@ -1,28 +1,24 @@
 //! The `subnetwork` crate provides a set of APIs to work with IP CIDRs in Rust.
-use std::error::Error;
 use std::fmt;
-use std::net::{AddrParseError, Ipv4Addr, Ipv6Addr};
+use std::net::AddrParseError;
+use std::net::Ipv4Addr;
+use std::net::Ipv6Addr;
+use std::num::ParseIntError;
 use std::str::FromStr;
+use thiserror::Error;
 
 const INIT_NEXT_VALUE: u8 = 1;
 const IPV4_LEN: u8 = 32;
 const IPV6_LEN: u8 = 128;
 
-#[derive(Debug)]
-pub struct InvalidInputError {
-    msg: String,
-}
-
-impl fmt::Display for InvalidInputError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "error: invalid input [{}]", self.msg)
-    }
-}
-
-impl Error for InvalidInputError {
-    fn description(&self) -> &str {
-        &self.msg
-    }
+#[derive(Error, Debug)]
+pub enum SubnetworkErrors {
+    #[error("invalid input: {msg}")]
+    InvalidInputError { msg: String },
+    #[error("ip addr parse error")]
+    AddrParseError(#[from] AddrParseError),
+    #[error("num parse error")]
+    ParseIntError(#[from] ParseIntError),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -71,7 +67,7 @@ impl CrossIpv4Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(start: Ipv4Addr, end: Ipv4Addr) -> Result<CrossIpv4Pool, InvalidInputError> {
+    pub fn new(start: Ipv4Addr, end: Ipv4Addr) -> Result<CrossIpv4Pool, SubnetworkErrors> {
         let start_ipv4 = Ipv4::new(start);
         let end_ipv4 = Ipv4::new(end);
         if start_ipv4.addr <= end_ipv4.addr {
@@ -83,7 +79,7 @@ impl CrossIpv4Pool {
             Ok(cip)
         } else {
             let msg = format!("{}-{}", start, end);
-            Err(InvalidInputError { msg })
+            Err(SubnetworkErrors::InvalidInputError { msg })
         }
     }
 }
@@ -125,17 +121,17 @@ impl fmt::Display for Ipv4Pool {
 }
 
 impl Ipv4Pool {
-    fn addr_check(ip_addr: &Ipv4Addr, prefix_len: u8) -> Result<(), InvalidInputError> {
+    fn addr_check(ip_addr: &Ipv4Addr, prefix_len: u8) -> Result<(), SubnetworkErrors> {
         if prefix_len > IPV4_LEN {
             let error_addr = format!("{}/{}", ip_addr, prefix_len);
-            Err(InvalidInputError {
+            Err(SubnetworkErrors::InvalidInputError {
                 msg: error_addr.to_string(),
             })
         } else {
             Ok(())
         }
     }
-    fn addr_check_str(address: &str) -> Result<(Ipv4Addr, u8), Box<dyn Error>> {
+    fn addr_check_str(address: &str) -> Result<(Ipv4Addr, u8), SubnetworkErrors> {
         if address.contains("/") {
             let address_vec: Vec<&str> = address.split("/").collect();
             if address_vec.len() == 2 {
@@ -146,9 +142,9 @@ impl Ipv4Pool {
                 }
             }
         }
-        Err(Box::new(InvalidInputError {
+        Err(SubnetworkErrors::InvalidInputError {
             msg: address.to_string(),
-        }))
+        })
     }
     /// Returns an Ipv4 iterator over the addresses contained in the network.
     ///
@@ -165,7 +161,7 @@ impl Ipv4Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(address: Ipv4Addr, prefix_len: u8) -> Result<Ipv4Pool, InvalidInputError> {
+    pub fn new(address: Ipv4Addr, prefix_len: u8) -> Result<Ipv4Pool, SubnetworkErrors> {
         match Ipv4Pool::addr_check(&address, prefix_len) {
             Ok(_) => {
                 let addr: u32 = address.into();
@@ -200,7 +196,7 @@ impl Ipv4Pool {
     ///     }
     /// }
     /// ```
-    pub fn from(address: &str) -> Result<Ipv4Pool, Box<dyn Error>> {
+    pub fn from(address: &str) -> Result<Ipv4Pool, SubnetworkErrors> {
         match Ipv4Pool::addr_check_str(address) {
             Ok((ip_addr, prefix_len)) => {
                 let ip_addr: u32 = ip_addr.into();
@@ -234,7 +230,7 @@ impl Ipv4Pool {
     ///     assert_eq!(ret, true);
     /// }
     /// ```
-    pub fn contain_from_str(&self, address: &str) -> Result<bool, AddrParseError> {
+    pub fn contain_from_str(&self, address: &str) -> Result<bool, SubnetworkErrors> {
         match Ipv4Addr::from_str(address) {
             Ok(addr) => {
                 let addr: u32 = addr.into();
@@ -244,7 +240,7 @@ impl Ipv4Pool {
                     Ok(false)
                 }
             }
-            Err(e) => Err(e),
+            Err(e) => Err(e.into()),
         }
     }
     /// Check if ip pool contains this ip.
@@ -341,7 +337,7 @@ impl CrossIpv6Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(start: Ipv6Addr, end: Ipv6Addr) -> Result<CrossIpv6Pool, InvalidInputError> {
+    pub fn new(start: Ipv6Addr, end: Ipv6Addr) -> Result<CrossIpv6Pool, SubnetworkErrors> {
         let start_ipv6 = Ipv6::new(start);
         let end_ipv6 = Ipv6::new(end);
         if start_ipv6.addr <= end_ipv6.addr {
@@ -353,7 +349,7 @@ impl CrossIpv6Pool {
             Ok(cip)
         } else {
             let msg = format!("{}-{}", start, end);
-            Err(InvalidInputError { msg })
+            Err(SubnetworkErrors::InvalidInputError { msg })
         }
     }
 }
@@ -393,17 +389,17 @@ impl fmt::Display for Ipv6Pool {
 }
 
 impl Ipv6Pool {
-    fn addr_check(ip_addr: &Ipv6Addr, prefix_len: u8) -> Result<(), InvalidInputError> {
+    fn addr_check(ip_addr: &Ipv6Addr, prefix_len: u8) -> Result<(), SubnetworkErrors> {
         if prefix_len > IPV6_LEN {
             let error_addr = format!("{}/{}", ip_addr, prefix_len);
-            Err(InvalidInputError {
+            Err(SubnetworkErrors::InvalidInputError {
                 msg: error_addr.to_string(),
             })
         } else {
             Ok(())
         }
     }
-    fn addr_check_str(address: &str) -> Result<(Ipv6Addr, u8), Box<dyn Error>> {
+    fn addr_check_str(address: &str) -> Result<(Ipv6Addr, u8), SubnetworkErrors> {
         if address.contains("/") {
             let address_vec: Vec<&str> = address.split("/").collect();
             if address_vec.len() == 2 {
@@ -414,9 +410,9 @@ impl Ipv6Pool {
                 }
             }
         }
-        Err(Box::new(InvalidInputError {
+        Err(SubnetworkErrors::InvalidInputError {
             msg: address.to_string(),
-        }))
+        })
     }
     /// Returns an Ipv6 iterator over the addresses contained in the network.
     ///
@@ -434,7 +430,7 @@ impl Ipv6Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(address: Ipv6Addr, prefix_len: u8) -> Result<Ipv6Pool, InvalidInputError> {
+    pub fn new(address: Ipv6Addr, prefix_len: u8) -> Result<Ipv6Pool, SubnetworkErrors> {
         match Ipv6Pool::addr_check(&address, prefix_len) {
             Ok(_) => {
                 let addr: u128 = address.into();
@@ -469,7 +465,7 @@ impl Ipv6Pool {
     ///     }
     /// }
     /// ```
-    pub fn from(address: &str) -> Result<Ipv6Pool, Box<dyn Error>> {
+    pub fn from(address: &str) -> Result<Ipv6Pool, SubnetworkErrors> {
         match Ipv6Pool::addr_check_str(address) {
             Ok((addr, prefix_len)) => {
                 let addr: u128 = addr.into();
@@ -503,7 +499,7 @@ impl Ipv6Pool {
     ///     assert_eq!(ret, true);
     /// }
     /// ```
-    pub fn contain_from_str(&self, address: &str) -> Result<bool, AddrParseError> {
+    pub fn contain_from_str(&self, address: &str) -> Result<bool, SubnetworkErrors> {
         match Ipv6Addr::from_str(address) {
             Ok(addr) => {
                 let addr: u128 = addr.into();
@@ -513,7 +509,7 @@ impl Ipv6Pool {
                     Ok(false)
                 }
             }
-            Err(e) => Err(e),
+            Err(e) => Err(e.into()),
         }
     }
     /// Check if ip pool contains this ip.
@@ -571,11 +567,11 @@ impl fmt::Display for Ipv4 {
 }
 
 impl Ipv4 {
-    fn prefix_len_check(&self, prefix_len: u8) -> Result<(), InvalidInputError> {
+    fn prefix_len_check(&self, prefix_len: u8) -> Result<(), SubnetworkErrors> {
         if prefix_len > IPV4_LEN {
             let addr: Ipv4Addr = self.addr.into();
             let error_msg = format!("{}/{}", addr, prefix_len);
-            Err(InvalidInputError { msg: error_msg })
+            Err(SubnetworkErrors::InvalidInputError { msg: error_msg })
         } else {
             Ok(())
         }
@@ -599,17 +595,17 @@ impl Ipv4 {
     ///     }
     /// }
     /// ```
-    pub fn from(address: &str) -> Result<Ipv4, AddrParseError> {
+    pub fn from(address: &str) -> Result<Ipv4, SubnetworkErrors> {
         // address: 192.168.1.1
         match Ipv4Addr::from_str(address) {
             Ok(addr) => {
                 let addr: u32 = addr.into();
                 Ok(Ipv4 { addr })
             }
-            Err(e) => Err(e),
+            Err(e) => Err(e.into()),
         }
     }
-    pub fn iter(&self, prefix_len: u8) -> Result<Ipv4Pool, InvalidInputError> {
+    pub fn iter(&self, prefix_len: u8) -> Result<Ipv4Pool, SubnetworkErrors> {
         match self.prefix_len_check(prefix_len) {
             Ok(_) => {
                 let mut mask: u32 = u32::MAX;
@@ -678,11 +674,11 @@ impl fmt::Display for Ipv6 {
 }
 
 impl Ipv6 {
-    fn prefix_len_check(&self, prefix_len: u8) -> Result<(), InvalidInputError> {
+    fn prefix_len_check(&self, prefix_len: u8) -> Result<(), SubnetworkErrors> {
         if prefix_len > IPV6_LEN {
             let addr: Ipv6Addr = self.addr.into();
-            let error_msg = format!("{}/{}", addr, prefix_len);
-            Err(InvalidInputError { msg: error_msg })
+            let msg = format!("{}/{}", addr, prefix_len);
+            Err(SubnetworkErrors::InvalidInputError { msg })
         } else {
             Ok(())
         }
@@ -705,17 +701,17 @@ impl Ipv6 {
     ///     }
     /// }
     /// ```
-    pub fn from(address: &str) -> Result<Ipv6, AddrParseError> {
+    pub fn from(address: &str) -> Result<Ipv6, SubnetworkErrors> {
         match Ipv6Addr::from_str(address) {
             Ok(addr) => {
                 let addr: u128 = addr.into();
                 Ok(Ipv6 { addr })
             }
-            Err(e) => Err(e),
+            Err(e) => Err(e.into()),
         }
     }
     /// Returns an Ipv6 iterator over the addresses contained in the network.
-    pub fn iter(&self, prefix_len: u8) -> Result<Ipv6Pool, InvalidInputError> {
+    pub fn iter(&self, prefix_len: u8) -> Result<Ipv6Pool, SubnetworkErrors> {
         match self.prefix_len_check(prefix_len) {
             Ok(_) => {
                 let mut mask: u128 = u128::MAX;
@@ -798,7 +794,7 @@ impl Ipv6 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    /******************** cross ipv4 ********************/
+    /* cross ipv4 pool */
     #[test]
     fn cross_ipv4_pool_print() {
         let start = Ipv4Addr::new(192, 168, 1, 1);
@@ -808,7 +804,7 @@ mod tests {
             println!("{:?}", i);
         }
     }
-    /******************** ipv4 ********************/
+    /* ipv4 test */
     #[test]
     fn ipv4_pool_print() {
         let test_str = "192.168.1.0/24";
@@ -845,7 +841,7 @@ mod tests {
         println!("{:8b}", ipv4.addr);
         assert_eq!(ipv4.addr, 3232235777);
     }
-    /******************** ipv6 ********************/
+    /* ipv6 test */
     #[test]
     fn ipv6() {
         let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
@@ -869,7 +865,7 @@ mod tests {
         println!("{:?}", ipv6.link_multicast());
         assert_eq!(ipv6.link_multicast(), ipv6_2);
     }
-    /******************** ipv4 pool ********************/
+    /* ipv4 pool test */
     #[test]
     fn ipv4_pool() {
         let ips = Ipv4Pool::from("192.168.1.0/24").unwrap();
@@ -959,9 +955,10 @@ mod tests {
         println!("{}", count);
     }
     #[test]
+    #[should_panic]
     fn test_github_issues_1() {
-        let _pool1 = Ipv4Pool::from("1.2.3.4/33");
-        let _pool2 = Ipv4Pool::from("1.2.3.4/");
-        let _pool3 = Ipv4Pool::from("nonip/24");
+        let _pool1 = Ipv4Pool::from("1.2.3.4/33").unwrap();
+        let _pool2 = Ipv4Pool::from("1.2.3.4/").unwrap();
+        let _pool3 = Ipv4Pool::from("nonip/24").unwrap();
     }
 }
