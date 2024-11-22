@@ -23,9 +23,9 @@ pub enum SubnetworkErrors {
 
 #[derive(Debug, Clone, Copy)]
 pub struct CrossIpv4Pool {
-    pub start: u32,
-    pub end: u32,
-    pub next: u32,
+    start: u32,
+    end: u32,
+    next: u32,
 }
 
 impl Iterator for CrossIpv4Pool {
@@ -86,10 +86,10 @@ impl CrossIpv4Pool {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ipv4Pool {
-    pub prefix: u32,
-    pub mask: u32,
-    pub next: u32,
-    pub stop: u32,
+    prefix: u32,
+    mask: u32,
+    next: u32,
+    stop: u32,
 }
 
 impl Iterator for Ipv4Pool {
@@ -292,9 +292,9 @@ impl Ipv4Pool {
 
 #[derive(Debug, Clone, Copy)]
 pub struct CrossIpv6Pool {
-    pub start: u128,
-    pub end: u128,
-    pub next: u128,
+    start: u128,
+    end: u128,
+    next: u128,
 }
 
 impl Iterator for CrossIpv6Pool {
@@ -356,10 +356,10 @@ impl CrossIpv6Pool {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ipv6Pool {
-    pub prefix: u128,
-    pub mask: u128,
-    pub next: u128,
-    pub stop: u128,
+    prefix: u128,
+    mask: u128,
+    next: u128,
+    stop: u128,
 }
 
 impl Iterator for Ipv6Pool {
@@ -556,7 +556,7 @@ impl Ipv6Pool {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ipv4 {
-    pub addr: u32,
+    addr: u32,
 }
 
 impl fmt::Display for Ipv4 {
@@ -663,7 +663,7 @@ impl Ipv4 {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ipv6 {
-    pub addr: u128,
+    addr: u128,
 }
 
 impl fmt::Display for Ipv6 {
