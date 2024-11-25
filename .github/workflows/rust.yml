@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rust:
+  build-and-test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
