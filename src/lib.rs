@@ -14,7 +14,7 @@ const IPV6_LEN: u8 = 128;
 #[derive(Error, Debug)]
 pub enum SubnetworkError {
     #[error("invalid input: {msg}")]
-    InvalidInputError { msg: String },
+    InvalidInput { msg: String },
     #[error("ip addr parse error")]
     AddrParseError(#[from] AddrParseError),
     #[error("num parse error")]
@@ -68,8 +68,8 @@ impl CrossIpv4Pool {
     /// }
     /// ```
     pub fn new(start: Ipv4Addr, end: Ipv4Addr) -> Result<CrossIpv4Pool, SubnetworkError> {
-        let start_ipv4 = Ipv4::new(start);
-        let end_ipv4 = Ipv4::new(end);
+        let start_ipv4 = SubnetworkIpv4::new(start);
+        let end_ipv4 = SubnetworkIpv4::new(end);
         if start_ipv4.addr <= end_ipv4.addr {
             let cip = CrossIpv4Pool {
                 start: start_ipv4.addr,
@@ -79,7 +79,7 @@ impl CrossIpv4Pool {
             Ok(cip)
         } else {
             let msg = format!("{}-{}", start, end);
-            Err(SubnetworkError::InvalidInputError { msg })
+            Err(SubnetworkError::InvalidInput { msg })
         }
     }
 }
@@ -124,7 +124,7 @@ impl Ipv4Pool {
     fn addr_check(ip_addr: &Ipv4Addr, prefix_len: u8) -> Result<(), SubnetworkError> {
         if prefix_len > IPV4_LEN {
             let error_addr = format!("{}/{}", ip_addr, prefix_len);
-            Err(SubnetworkError::InvalidInputError {
+            Err(SubnetworkError::InvalidInput {
                 msg: error_addr.to_string(),
             })
         } else {
@@ -137,12 +137,13 @@ impl Ipv4Pool {
             if address_vec.len() == 2 {
                 let ip_addr: Ipv4Addr = address_vec[0].parse()?;
                 let prefix_len: u8 = address_vec[1].parse()?;
-                if prefix_len <= IPV4_LEN {
-                    return Ok((ip_addr, prefix_len));
+                match Ipv4Pool::addr_check(&ip_addr, prefix_len) {
+                    Ok(_) => return Ok((ip_addr, prefix_len)),
+                    Err(e) => return Err(e),
                 }
             }
         }
-        Err(SubnetworkError::InvalidInputError {
+        Err(SubnetworkError::InvalidInput {
             msg: address.to_string(),
         })
     }
@@ -338,8 +339,8 @@ impl CrossIpv6Pool {
     /// }
     /// ```
     pub fn new(start: Ipv6Addr, end: Ipv6Addr) -> Result<CrossIpv6Pool, SubnetworkError> {
-        let start_ipv6 = Ipv6::new(start);
-        let end_ipv6 = Ipv6::new(end);
+        let start_ipv6 = SubnetworkIpv6::new(start);
+        let end_ipv6 = SubnetworkIpv6::new(end);
         if start_ipv6.addr <= end_ipv6.addr {
             let cip = CrossIpv6Pool {
                 start: start_ipv6.addr,
@@ -349,7 +350,7 @@ impl CrossIpv6Pool {
             Ok(cip)
         } else {
             let msg = format!("{}-{}", start, end);
-            Err(SubnetworkError::InvalidInputError { msg })
+            Err(SubnetworkError::InvalidInput { msg })
         }
     }
 }
@@ -392,7 +393,7 @@ impl Ipv6Pool {
     fn addr_check(ip_addr: &Ipv6Addr, prefix_len: u8) -> Result<(), SubnetworkError> {
         if prefix_len > IPV6_LEN {
             let error_addr = format!("{}/{}", ip_addr, prefix_len);
-            Err(SubnetworkError::InvalidInputError {
+            Err(SubnetworkError::InvalidInput {
                 msg: error_addr.to_string(),
             })
         } else {
@@ -403,14 +404,15 @@ impl Ipv6Pool {
         if address.contains("/") {
             let address_vec: Vec<&str> = address.split("/").collect();
             if address_vec.len() == 2 {
-                let addr: Ipv6Addr = address_vec[0].parse()?;
+                let ip_addr: Ipv6Addr = address_vec[0].parse()?;
                 let prefix_len: u8 = address_vec[1].parse()?;
-                if prefix_len <= IPV6_LEN {
-                    return Ok((addr, prefix_len));
+                match Ipv6Pool::addr_check(&ip_addr, prefix_len) {
+                    Ok(_) => return Ok((ip_addr, prefix_len)),
+                    Err(e) => return Err(e),
                 }
             }
         }
-        Err(SubnetworkError::InvalidInputError {
+        Err(SubnetworkError::InvalidInput {
             msg: address.to_string(),
         })
     }
@@ -555,32 +557,32 @@ impl Ipv6Pool {
 /* Single Addr Struct */
 
 #[derive(Debug, Clone, Copy)]
-pub struct Ipv4 {
+pub struct SubnetworkIpv4 {
     addr: u32,
 }
 
-impl fmt::Display for Ipv4 {
+impl fmt::Display for SubnetworkIpv4 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let addr: Ipv4Addr = self.addr.into();
         write!(f, "{}", addr)
     }
 }
 
-impl Ipv4 {
+impl SubnetworkIpv4 {
     fn prefix_len_check(&self, prefix_len: u8) -> Result<(), SubnetworkError> {
         if prefix_len > IPV4_LEN {
             let addr: Ipv4Addr = self.addr.into();
             let error_msg = format!("{}/{}", addr, prefix_len);
-            Err(SubnetworkError::InvalidInputError { msg: error_msg })
+            Err(SubnetworkError::InvalidInput { msg: error_msg })
         } else {
             Ok(())
         }
     }
     /// Constructs a new `Ipv4` from a given Ipv4Addr.
-    pub fn new(address: Ipv4Addr) -> Ipv4 {
+    pub fn new(address: Ipv4Addr) -> SubnetworkIpv4 {
         // address: 192.168.1.1
         let addr: u32 = address.into();
-        Ipv4 { addr }
+        SubnetworkIpv4 { addr }
     }
     /// Constructs a new `Ipv4` from a given `&str`.
     ///
@@ -595,12 +597,12 @@ impl Ipv4 {
     ///     }
     /// }
     /// ```
-    pub fn from(address: &str) -> Result<Ipv4, SubnetworkError> {
+    pub fn from(address: &str) -> Result<SubnetworkIpv4, SubnetworkError> {
         // address: 192.168.1.1
         match Ipv4Addr::from_str(address) {
             Ok(addr) => {
                 let addr: u32 = addr.into();
-                Ok(Ipv4 { addr })
+                Ok(SubnetworkIpv4 { addr })
             }
             Err(e) => Err(e.into()),
         }
@@ -642,7 +644,7 @@ impl Ipv4 {
     ///     assert_eq!(ret, 25);
     /// }
     /// ```
-    pub fn largest_identical_prefix(&self, target: Ipv4) -> u32 {
+    pub fn largest_identical_prefix(&self, target: SubnetworkIpv4) -> u32 {
         let a = self.addr;
         let b = target.addr;
         let mut mask = 1;
@@ -662,31 +664,31 @@ impl Ipv4 {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Ipv6 {
+pub struct SubnetworkIpv6 {
     addr: u128,
 }
 
-impl fmt::Display for Ipv6 {
+impl fmt::Display for SubnetworkIpv6 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let addr: Ipv6Addr = self.addr.into();
         write!(f, "{}", addr)
     }
 }
 
-impl Ipv6 {
+impl SubnetworkIpv6 {
     fn prefix_len_check(&self, prefix_len: u8) -> Result<(), SubnetworkError> {
         if prefix_len > IPV6_LEN {
             let addr: Ipv6Addr = self.addr.into();
             let msg = format!("{}/{}", addr, prefix_len);
-            Err(SubnetworkError::InvalidInputError { msg })
+            Err(SubnetworkError::InvalidInput { msg })
         } else {
             Ok(())
         }
     }
     /// Constructs a new `Ipv6` from a given Ipv6Addr.
-    pub fn new(address: Ipv6Addr) -> Ipv6 {
+    pub fn new(address: Ipv6Addr) -> SubnetworkIpv6 {
         let addr: u128 = address.into();
-        Ipv6 { addr }
+        SubnetworkIpv6 { addr }
     }
     /// Constructs a new `Ipv6` from a given `&str`.
     ///
@@ -701,11 +703,11 @@ impl Ipv6 {
     ///     }
     /// }
     /// ```
-    pub fn from(address: &str) -> Result<Ipv6, SubnetworkError> {
+    pub fn from(address: &str) -> Result<SubnetworkIpv6, SubnetworkError> {
         match Ipv6Addr::from_str(address) {
             Ok(addr) => {
                 let addr: u128 = addr.into();
-                Ok(Ipv6 { addr })
+                Ok(SubnetworkIpv6 { addr })
             }
             Err(e) => Err(e.into()),
         }
@@ -737,11 +739,11 @@ impl Ipv6 {
         let node = Ipv6Addr::new(
             0xFF01, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xFF00, 0x0000,
         );
-        let node = Ipv6::new(node);
+        let node = SubnetworkIpv6::new(node);
         let mask = Ipv6Addr::new(
             0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00FF, 0xFFFF,
         );
-        let mask = Ipv6::new(mask);
+        let mask = SubnetworkIpv6::new(mask);
         (node.addr + (mask.addr & self.addr)).into()
     }
     /// Returns the link local scope multicast address of this `Ipv6`.
@@ -749,11 +751,11 @@ impl Ipv6 {
         let link = Ipv6Addr::new(
             0xFF02, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xFF00, 0x0000,
         );
-        let link = Ipv6::new(link);
+        let link = SubnetworkIpv6::new(link);
         let mask = Ipv6Addr::new(
             0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00FF, 0xFFFF,
         );
-        let mask = Ipv6::new(mask);
+        let mask = SubnetworkIpv6::new(mask);
         (link.addr + (mask.addr & self.addr)).into()
     }
     /// Returns the site local scope multicast address of this `Ipv6`.
@@ -761,18 +763,18 @@ impl Ipv6 {
         let site = Ipv6Addr::new(
             0xFF05, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xFF00, 0x0000,
         );
-        let site = Ipv6::new(site);
+        let site = SubnetworkIpv6::new(site);
         let mask = Ipv6Addr::new(
             0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00FF, 0xFFFF,
         );
-        let mask = Ipv6::new(mask);
+        let mask = SubnetworkIpv6::new(mask);
         (site.addr + (mask.addr & self.addr)).into()
     }
     /// Returns the standard IPv4 address.
     pub fn to_std(&self) -> Ipv6Addr {
         self.addr.into()
     }
-    pub fn max_identical_prefix(&self, target: Ipv6) -> u128 {
+    pub fn max_identical_prefix(&self, target: SubnetworkIpv6) -> u128 {
         let a = self.addr;
         let b = target.addr;
         let mut mask = 1;
@@ -815,13 +817,13 @@ mod tests {
     #[test]
     fn ipv4_print() {
         let test_str = "192.168.1.1";
-        let ipv4 = Ipv4::from(test_str).unwrap();
+        let ipv4 = SubnetworkIpv4::from(test_str).unwrap();
         let ipv4_str = format!("{}", ipv4);
         assert_eq!(ipv4_str, test_str);
     }
     #[test]
     fn ipv4_iter() {
-        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
+        let ipv4 = SubnetworkIpv4::from("192.168.1.1").unwrap();
         for i in ipv4.iter(24).unwrap() {
             println!("{:?}", i);
         }
@@ -829,7 +831,7 @@ mod tests {
     }
     #[test]
     fn ipv6_iter() {
-        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
+        let ipv6 = SubnetworkIpv6::from("::ffff:192.10.2.255").unwrap();
         for i in ipv6.iter(124).unwrap() {
             println!("{:?}", i);
         }
@@ -837,14 +839,14 @@ mod tests {
     }
     #[test]
     fn ipv4() {
-        let ipv4 = Ipv4::from("192.168.1.1").unwrap();
+        let ipv4 = SubnetworkIpv4::from("192.168.1.1").unwrap();
         println!("{:8b}", ipv4.addr);
         assert_eq!(ipv4.addr, 3232235777);
     }
     /* ipv6 test */
     #[test]
     fn ipv6() {
-        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
+        let ipv6 = SubnetworkIpv6::from("::ffff:192.10.2.255").unwrap();
         println!("{:?}", ipv6);
         assert_eq!(ipv6.addr, 281473903624959);
     }
@@ -853,14 +855,14 @@ mod tests {
         // let a: u8 = 0b1100;
         // let b: u8 = 0b0011;
         // println!("{}", a + b);
-        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
+        let ipv6 = SubnetworkIpv6::from("::ffff:192.10.2.255").unwrap();
         let ipv6_2: Ipv6Addr = "ff01::1:ff0a:2ff".parse().unwrap();
         println!("{:?}", ipv6.node_multicast());
         assert_eq!(ipv6.node_multicast(), ipv6_2);
     }
     #[test]
     fn ipv6_link() {
-        let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
+        let ipv6 = SubnetworkIpv6::from("::ffff:192.10.2.255").unwrap();
         let ipv6_2: Ipv6Addr = "ff02::1:ff0a:2ff".parse().unwrap();
         println!("{:?}", ipv6.link_multicast());
         assert_eq!(ipv6.link_multicast(), ipv6_2);
@@ -929,8 +931,8 @@ mod tests {
     }
     #[test]
     fn test_largest_identical_prefix() {
-        let ipv4_1 = Ipv4::from("192.168.1.136").unwrap();
-        let ipv4_2 = Ipv4::from("192.168.1.192").unwrap();
+        let ipv4_1 = SubnetworkIpv4::from("192.168.1.136").unwrap();
+        let ipv4_2 = SubnetworkIpv4::from("192.168.1.192").unwrap();
         let ret = ipv4_1.largest_identical_prefix(ipv4_2);
         println!("{}", ret);
     }
