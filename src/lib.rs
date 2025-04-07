@@ -8,8 +8,8 @@ use std::str::FromStr;
 use thiserror::Error;
 
 const INIT_NEXT_VALUE: u8 = 1;
-const IPV4_LEN: usize = 32;
-const IPV6_LEN: usize = 128;
+const IPV4_LEN: u8 = 32;
+const IPV6_LEN: u8 = 128;
 
 #[derive(Error, Debug)]
 pub enum SubnetworkError {
@@ -121,7 +121,7 @@ impl fmt::Display for Ipv4Pool {
 }
 
 impl Ipv4Pool {
-    fn addr_check(ip_addr: &Ipv4Addr, prefix_len: usize) -> Result<(), SubnetworkError> {
+    fn addr_check(ip_addr: &Ipv4Addr, prefix_len: u8) -> Result<(), SubnetworkError> {
         if prefix_len > IPV4_LEN {
             let error_addr = format!("{}/{}", ip_addr, prefix_len);
             Err(SubnetworkError::InvalidInput {
@@ -131,12 +131,12 @@ impl Ipv4Pool {
             Ok(())
         }
     }
-    fn addr_check_str(address: &str) -> Result<(Ipv4Addr, usize), SubnetworkError> {
+    fn addr_check_str(address: &str) -> Result<(Ipv4Addr, u8), SubnetworkError> {
         if address.contains("/") {
             let address_vec: Vec<&str> = address.split("/").collect();
             if address_vec.len() == 2 {
                 let ip_addr: Ipv4Addr = address_vec[0].parse()?;
-                let prefix_len: usize = address_vec[1].parse()?;
+                let prefix_len: u8 = address_vec[1].parse()?;
                 match Ipv4Pool::addr_check(&ip_addr, prefix_len) {
                     Ok(_) => return Ok((ip_addr, prefix_len)),
                     Err(e) => return Err(e),
@@ -162,7 +162,7 @@ impl Ipv4Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(address: Ipv4Addr, prefix_len: usize) -> Result<Ipv4Pool, SubnetworkError> {
+    pub fn new(address: Ipv4Addr, prefix_len: u8) -> Result<Ipv4Pool, SubnetworkError> {
         match Ipv4Pool::addr_check(&address, prefix_len) {
             Ok(_) => {
                 let addr: u32 = address.into();
@@ -384,7 +384,7 @@ impl fmt::Display for Ipv6Pool {
 }
 
 impl Ipv6Pool {
-    fn addr_check(ip_addr: &Ipv6Addr, prefix_len: usize) -> Result<(), SubnetworkError> {
+    fn addr_check(ip_addr: &Ipv6Addr, prefix_len: u8) -> Result<(), SubnetworkError> {
         if prefix_len > IPV6_LEN {
             let error_addr = format!("{}/{}", ip_addr, prefix_len);
             Err(SubnetworkError::InvalidInput {
@@ -394,12 +394,12 @@ impl Ipv6Pool {
             Ok(())
         }
     }
-    fn addr_check_str(address: &str) -> Result<(Ipv6Addr, usize), SubnetworkError> {
+    fn addr_check_str(address: &str) -> Result<(Ipv6Addr, u8), SubnetworkError> {
         if address.contains("/") {
             let address_vec: Vec<&str> = address.split("/").collect();
             if address_vec.len() == 2 {
                 let ip_addr: Ipv6Addr = address_vec[0].parse()?;
-                let prefix_len: usize = address_vec[1].parse()?;
+                let prefix_len: u8 = address_vec[1].parse()?;
                 match Ipv6Pool::addr_check(&ip_addr, prefix_len) {
                     Ok(_) => return Ok((ip_addr, prefix_len)),
                     Err(e) => return Err(e),
@@ -426,7 +426,7 @@ impl Ipv6Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(address: Ipv6Addr, prefix_len: usize) -> Result<Ipv6Pool, SubnetworkError> {
+    pub fn new(address: Ipv6Addr, prefix_len: u8) -> Result<Ipv6Pool, SubnetworkError> {
         match Ipv6Pool::addr_check(&address, prefix_len) {
             Ok(_) => {
                 let addr: u128 = address.into();
@@ -557,7 +557,7 @@ impl fmt::Display for SubnetworkIpv4 {
 }
 
 impl SubnetworkIpv4 {
-    fn prefix_len_check(&self, prefix_len: usize) -> Result<(), SubnetworkError> {
+    fn prefix_len_check(&self, prefix_len: u8) -> Result<(), SubnetworkError> {
         if prefix_len > IPV4_LEN {
             let addr: Ipv4Addr = self.addr.into();
             let error_msg = format!("{}/{}", addr, prefix_len);
@@ -595,7 +595,7 @@ impl SubnetworkIpv4 {
             Err(e) => Err(e.into()),
         }
     }
-    pub fn iter(&self, prefix_len: usize) -> Result<Ipv4Pool, SubnetworkError> {
+    pub fn iter(&self, prefix_len: u8) -> Result<Ipv4Pool, SubnetworkError> {
         match self.prefix_len_check(prefix_len) {
             Ok(_) => {
                 let mask: u32 = u32::MAX << (IPV4_LEN - prefix_len);
@@ -661,7 +661,7 @@ impl fmt::Display for SubnetworkIpv6 {
 }
 
 impl SubnetworkIpv6 {
-    fn prefix_len_check(&self, prefix_len: usize) -> Result<(), SubnetworkError> {
+    fn prefix_len_check(&self, prefix_len: u8) -> Result<(), SubnetworkError> {
         if prefix_len > IPV6_LEN {
             let addr: Ipv6Addr = self.addr.into();
             let msg = format!("{}/{}", addr, prefix_len);
@@ -698,7 +698,7 @@ impl SubnetworkIpv6 {
         }
     }
     /// Returns an Ipv6 iterator over the addresses contained in the network.
-    pub fn iter(&self, prefix_len: usize) -> Result<Ipv6Pool, SubnetworkError> {
+    pub fn iter(&self, prefix_len: u8) -> Result<Ipv6Pool, SubnetworkError> {
         match self.prefix_len_check(prefix_len) {
             Ok(_) => {
                 let mask: u128 = u128::MAX << (IPV6_LEN - prefix_len);
@@ -776,11 +776,11 @@ impl SubnetworkIpv6 {
 }
 
 pub struct SubnetworkNetmask {
-    prefix_len: usize,
+    prefix_len: u8,
 }
 
 impl SubnetworkNetmask {
-    pub fn new(prefix_len: usize) -> SubnetworkNetmask {
+    pub fn new(prefix_len: u8) -> SubnetworkNetmask {
         SubnetworkNetmask { prefix_len }
     }
     pub fn to_ipv4(&self) -> Result<Ipv4Addr, SubnetworkError> {
