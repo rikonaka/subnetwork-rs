@@ -819,6 +819,14 @@ impl SubnetworkNetmask {
 #[cfg(test)]
 mod tests {
     use super::*;
+    /* netmask */
+    #[test]
+    fn netmask() {
+        let prefix_len = 24;
+        let netmask = SubnetworkNetmask::new(prefix_len);
+        let ipv4_addr = netmask.to_ipv4().unwrap();
+        assert_eq!(ipv4_addr, Ipv4Addr::new(255, 255, 255, 0));
+    }
     /* cross ipv4 pool */
     #[test]
     fn cross_ipv4_pool_print() {
