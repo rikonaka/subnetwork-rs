@@ -826,6 +826,11 @@ mod tests {
         let netmask = SubnetworkNetmask::new(prefix_len);
         let ipv4_addr = netmask.to_ipv4().unwrap();
         assert_eq!(ipv4_addr, Ipv4Addr::new(255, 255, 255, 0));
+
+        let prefix_len = 26;
+        let netmask = SubnetworkNetmask::new(prefix_len);
+        let ipv4_addr = netmask.to_ipv4().unwrap();
+        assert_eq!(ipv4_addr, Ipv4Addr::new(255, 255, 255, 192));
     }
     /* cross ipv4 pool */
     #[test]
