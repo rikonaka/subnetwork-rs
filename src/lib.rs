@@ -167,9 +167,8 @@ impl Ipv4Pool {
             Ok(_) => {
                 let addr: u32 = address.into();
                 let mask: u32 = u32::MAX << (IPV4_LEN - prefix_len);
-                let exp = (IPV4_LEN - prefix_len) as u32;
                 let next = INIT_NEXT_VALUE as u32;
-                let stop = u32::pow(2, exp);
+                let stop = 1 << (IPV4_LEN - prefix_len);
                 let prefix = addr & mask;
                 return Ok(Ipv4Pool {
                     prefix,
@@ -199,9 +198,8 @@ impl Ipv4Pool {
             Ok((ip_addr, prefix_len)) => {
                 let ip_addr: u32 = ip_addr.into();
                 let mask: u32 = u32::MAX << (IPV4_LEN - prefix_len);
-                let exp = (IPV4_LEN - prefix_len) as u32;
                 let next = INIT_NEXT_VALUE as u32;
-                let stop = u32::pow(2, exp);
+                let stop = 1 << (IPV4_LEN - prefix_len);
                 let prefix = ip_addr & mask;
                 return Ok(Ipv4Pool {
                     prefix,
@@ -430,10 +428,9 @@ impl Ipv6Pool {
         match Ipv6Pool::addr_check(&address, prefix_len) {
             Ok(_) => {
                 let addr: u128 = address.into();
-                let mask: u128 = u128::MAX << (IPV4_LEN - prefix_len);
-                let exp = (IPV6_LEN - prefix_len) as u32;
+                let mask: u128 = u128::MAX << (IPV6_LEN - prefix_len);
                 let next = INIT_NEXT_VALUE as u128;
-                let stop = u128::pow(2, exp);
+                let stop = 1 << (IPV6_LEN - prefix_len);
                 let prefix = addr & mask;
                 Ok(Ipv6Pool {
                     prefix,
@@ -463,9 +460,8 @@ impl Ipv6Pool {
             Ok((addr, prefix_len)) => {
                 let addr: u128 = addr.into();
                 let mask: u128 = u128::MAX << (IPV6_LEN - prefix_len);
-                let exp = (IPV6_LEN - prefix_len) as u32;
                 let next = INIT_NEXT_VALUE as u128;
-                let stop = u128::pow(2, exp);
+                let stop = 1 << (IPV6_LEN - prefix_len);
                 let prefix = addr & mask;
                 Ok(Ipv6Pool {
                     prefix,
@@ -576,10 +572,10 @@ impl SubnetworkIpv4 {
     ///
     /// # Example
     /// ```
-    /// use subnetwork::Ipv4;
+    /// use subnetwork::SubnetworkIpv4;
     ///
     /// fn main() {
-    ///     let ipv4 = Ipv4::from("192.168.1.1").unwrap();
+    ///     let ipv4 = SubnetworkIpv4::from("192.168.1.1").unwrap();
     ///     for i in ipv4.iter(24).unwrap() {
     ///         println!("{:?}", i);
     ///     }
@@ -599,9 +595,8 @@ impl SubnetworkIpv4 {
         match self.prefix_len_check(prefix_len) {
             Ok(_) => {
                 let mask: u32 = u32::MAX << (IPV4_LEN - prefix_len);
-                let exp = (IPV4_LEN - prefix_len) as u32;
                 let next = INIT_NEXT_VALUE as u32;
-                let stop = u32::pow(2, exp);
+                let stop = 1 << (IPV4_LEN - prefix_len);
                 let prefix = self.addr & mask;
                 Ok(Ipv4Pool {
                     prefix,
@@ -620,11 +615,12 @@ impl SubnetworkIpv4 {
     /// Returns the largest identical prefix of two IP addresses.
     /// # Example
     /// ```
-    /// use subnetwork::{Ipv4, Ipv4Pool};
+    /// use subnetwork::SubnetworkIpv4;
+    /// use subnetwork::Ipv4Pool;
     ///
     /// fn main() {
-    ///     let ipv4_1 = Ipv4::from("192.168.1.136").unwrap();
-    ///     let ipv4_2 = Ipv4::from("192.168.1.192").unwrap();
+    ///     let ipv4_1 = SubnetworkIpv4::from("192.168.1.136").unwrap();
+    ///     let ipv4_2 = SubnetworkIpv4::from("192.168.1.192").unwrap();
     ///     let ret = ipv4_1.largest_identical_prefix(ipv4_2);
     ///     assert_eq!(ret, 25);
     /// }
@@ -679,10 +675,10 @@ impl SubnetworkIpv6 {
     ///
     /// # Example
     /// ```
-    /// use subnetwork::Ipv6;
+    /// use subnetwork::SubnetworkIpv6;
     ///
     /// fn main() {
-    ///     let ipv6 = Ipv6::from("::ffff:192.10.2.255").unwrap();
+    ///     let ipv6 = SubnetworkIpv6::from("::ffff:192.10.2.255").unwrap();
     ///     for i in ipv6.iter(124) {
     ///         println!("{:?}", i);
     ///     }
@@ -702,9 +698,8 @@ impl SubnetworkIpv6 {
         match self.prefix_len_check(prefix_len) {
             Ok(_) => {
                 let mask: u128 = u128::MAX << (IPV6_LEN - prefix_len);
-                let exp = (IPV6_LEN - prefix_len) as u32;
                 let next = INIT_NEXT_VALUE as u128;
-                let stop = u128::pow(2, exp);
+                let stop = 1 << (IPV6_LEN - prefix_len);
                 let prefix = self.addr & mask;
                 Ok(Ipv6Pool {
                     prefix,
@@ -780,6 +775,18 @@ pub struct SubnetworkNetmask {
 }
 
 impl SubnetworkNetmask {
+    /// Constructs a new `Ipv6` from a given `&str`.
+    ///
+    /// # Example
+    /// ```
+    /// use subnetwork::SubnetworkNetmask;
+    ///
+    /// fn main() {
+    ///     let netmask = SubnetworkNetmask::new(24);
+    ///     // 255.255.255.0
+    ///     let netmask_ip = netmask.to_ipv4().unwrap();
+    /// }
+    /// ```
     pub fn new(prefix_len: u8) -> SubnetworkNetmask {
         SubnetworkNetmask { prefix_len }
     }
