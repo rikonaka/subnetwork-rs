@@ -1,8 +1,8 @@
 [package]
 name = "subnetwork"
-version = "0.5.2"
-edition = "2021"
-license = "MIT"
+version = "0.5.3"
+edition = "2024"
+license = "MIT OR Apache-2.0"
 description = "Return all ip addresses of a subnetwork"
 homepage = "https://github.com/rikonaka/subnetwork-rs"
 documentation = "https://docs.rs/subnetwork"
