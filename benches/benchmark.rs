@@ -40,7 +40,7 @@ fn subnetwork_func(tests: usize) {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let tests = 1;
+    let tests = 100;
     c.bench_function("cidr", |b| b.iter(|| cidr_func(tests)));
     c.bench_function("ipnetwork", |b| b.iter(|| ipnetwork_func(tests)));
     c.bench_function("subnetwork", |b| b.iter(|| subnetwork_func(tests)));
