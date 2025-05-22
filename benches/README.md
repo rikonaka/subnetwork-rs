@@ -12,17 +12,6 @@ Target: x86_64-unknown-linux-gnu
 | :-----: | :--------: | :-------: | :---: |
 | version |   0.5.4    |  0.21.0   | 0.3.1 |
 
-# Executable File Size
-
-```bash
-➜  benches git:(main) ✗ du test_cidr/target/x86_64-unknown-linux-gnu/release/test_cidr -h
-424K    test_cidr/target/x86_64-unknown-linux-gnu/release/test_cidr
-➜  benches git:(main) ✗ du test_ipnetwork/target/x86_64-unknown-linux-gnu/release/test_ipnetwork -h
-436K    test_ipnetwork/target/x86_64-unknown-linux-gnu/release/test_ipnetwork
-➜  benches git:(main) ✗ du test_subnetwork/target/x86_64-unknown-linux-gnu/release/test_subnetwork -h
-436K    test_subnetwork/target/x86_64-unknown-linux-gnu/release/test_subnetwork
-```
-
 # Benchmark from script
 
 |  id   |   subnetwork    |    ipnetwork    |      cidr       |
@@ -35,20 +24,76 @@ Target: x86_64-unknown-linux-gnu
 |  #5   |      11.12      |      11.42      |      11.31      |
 |  #6   |      11.13      |      11.39      |      11.34      |
 
-# Benchmark from criterion  
+# Benchmark from criterion
+
+## First Shot
 
 ```bash
-cidr                    time:   [7.3136 ms 7.3865 ms 7.4748 ms]
-                        change: [+9630.4% +9824.5% +10007%] (p = 0.00 < 0.05)
-                        Performance has regressed.
+cidr                    time:   [8.5702 ms 8.5896 ms 8.6121 ms]
+Found 3 outliers among 100 measurements (3.00%)
+  2 (2.00%) high mild
+  1 (1.00%) high severe
 
-ipnetwork               time:   [9.0608 ms 9.1397 ms 9.2195 ms]
-                        change: [+9759.5% +9908.8% +10056%] (p = 0.00 < 0.05)
-                        Performance has regressed.
+ipnetwork               time:   [10.720 ms 10.758 ms 10.799 ms]
+Found 8 outliers among 100 measurements (8.00%)
+  8 (8.00%) high mild
 
-subnetwork              time:   [10.589 ms 10.668 ms 10.752 ms]
-                        change: [+9911.0% +10025% +10147%] (p = 0.00 < 0.05)
+subnetwork              time:   [7.1939 ms 7.2092 ms 7.2273 ms]
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) low mild
+  3 (3.00%) high mild
+  1 (1.00%) high severe
+```
+
+## Second Shot
+
+```bash
+cidr                    time:   [8.4223 ms 8.4636 ms 8.5133 ms]
+                        change: [−1.9902% −1.4673% −0.8426%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
+Found 4 outliers among 100 measurements (4.00%)
+  2 (2.00%) high mild
+  2 (2.00%) high severe
+
+ipnetwork               time:   [8.5526 ms 8.5825 ms 8.6128 ms]
+                        change: [−20.641% −20.223% −19.807%] (p = 0.00 < 0.05)
+                        Performance has improved.
+
+subnetwork              time:   [6.9187 ms 6.9336 ms 6.9495 ms]
+                        change: [−4.1210% −3.8231% −3.5048%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 11 outliers among 100 measurements (11.00%)
+  10 (10.00%) high mild
+  1 (1.00%) high severe
+```
+
+## Third Shot
+
+```bash
+cidr                    time:   [8.4565 ms 8.4634 ms 8.4696 ms]
+                        change: [−0.5825% −0.0018% +0.4944%] (p = 1.00 > 0.05)
+                        No change in performance detected.
+Found 12 outliers among 100 measurements (12.00%)
+  3 (3.00%) low severe
+  3 (3.00%) high mild
+  6 (6.00%) high severe
+
+ipnetwork               time:   [8.5778 ms 8.5932 ms 8.6080 ms]
+                        change: [−0.2714% +0.1248% +0.5196%] (p = 0.53 > 0.05)
+                        No change in performance detected.
+Found 27 outliers among 100 measurements (27.00%)
+  15 (15.00%) low severe
+  2 (2.00%) low mild
+  3 (3.00%) high mild
+  7 (7.00%) high severe
+
+subnetwork              time:   [7.0644 ms 7.0712 ms 7.0769 ms]
+                        change: [+1.7279% +1.9837% +2.2174%] (p = 0.00 < 0.05)
                         Performance has regressed.
+Found 10 outliers among 100 measurements (10.00%)
+  2 (2.00%) low severe
+  2 (2.00%) high mild
+  6 (6.00%) high severe
 ```
 
 # Test Environment (old)
