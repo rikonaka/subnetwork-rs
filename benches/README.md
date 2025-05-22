@@ -66,7 +66,7 @@ Target: x86_64-unknown-linux-gnu
 
 # Test Content
 
-Time to run 10,000 runs returning code from the `192.168.0.0/16` subnet IP.
+Run the compiled program 10,000 times and get the final running time. The program returns all subnet IPs within 192.168.0.0/16.
 
 # Benchmark
 
