@@ -96,7 +96,7 @@ Found 10 outliers among 100 measurements (10.00%)
   6 (6.00%) high severe
 ```
 
-I found that on my other AMD desktop, subnetwork outperformed the other two libraries, but on an Intel laptop the opposite was true.
+I found that on my other AMD desktop, `subnetwork` outperformed the other two libraries, but on an Intel laptop the opposite was true.
 
 # Test Environment (old)
 
