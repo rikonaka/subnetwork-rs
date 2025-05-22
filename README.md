@@ -39,4 +39,4 @@ fn main() {
 
 ## Benchmark
 
-You can see how our performance compares to other similar libraries [here](./benchmark/README.md).
+You can see how our performance compares to other similar libraries [here](./benches/README.md).
