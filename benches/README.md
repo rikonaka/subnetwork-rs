@@ -1,8 +1,8 @@
 # Test Environment (2025-5-22)
 
-CPU: Intel i5-11300H
+CPU: AMD 5950x
 
-OS: Debian Testing with 6.12.27-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.27-1 (2025-05-06) x86_64 GNU/Linux
+OS: Debian 12 with 6.1.0-35-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.137-1 (2025-05-07) x86_64 GNU/Linux
 
 Rust: rustc 1.87.0 (17067e9ac 2025-05-09)
 
@@ -25,14 +25,15 @@ Target: x86_64-unknown-linux-gnu
 
 # Benchmark from script
 
-|  id   |   subnetwork    |            |    ipnetwork    |            |      cidr       |            |
-| :---: | :-------------: | :--------: | :-------------: | :--------: | :-------------: | :--------: |
-|       | **total (sec)** | user (sec) | **total (sec)** | user (sec) | **total (sec)** | user (sec) |
-|  #1   |      27.81      |    9.16    |      29.04      |    9.25    |      28.79      |   10.12    |
-|  #2   |      27.94      |    9.23    |      29.55      |   10.89    |      29.85      |   12.03    |
-|  #3   |      28.32      |    9.85    |      28.65      |    9.57    |      29.02      |   10.68    |
-|  #4   |      28.23      |    8.90    |      28.91      |    9.81    |      29.17      |   10.11    |
-|  avg  |     28.075      |            |     29.0375     |            |     29.2075     |            |
+|  id   |   subnetwork    |    ipnetwork    |      cidr       |
+| :---: | :-------------: | :-------------: | :-------------: |
+|       | **total (sec)** | **total (sec)** | **total (sec)** |
+|  #1   |      11.11      |      11.44      |      11.32      |
+|  #2   |      11.08      |      11.43      |      11.34      |
+|  #3   |      11.08      |      11.41      |      11.46      |
+|  #4   |      11.10      |      11.30      |      11.25      |
+|  #5   |      11.12      |      11.42      |      11.31      |
+|  #6   |      11.13      |      11.39      |      11.34      |
 
 # Benchmark from criterion  
 
