@@ -23,7 +23,7 @@ Target: x86_64-unknown-linux-gnu
 436K    test_subnetwork/target/x86_64-unknown-linux-gnu/release/test_subnetwork
 ```
 
-# Benchmark
+# Benchmark from script
 
 |  id   | subnetwork |       | ipnetwork |       |   cidr    |       |
 | :---: | :--------: | :---: | :-------: | :---: | :-------: | :---: |
