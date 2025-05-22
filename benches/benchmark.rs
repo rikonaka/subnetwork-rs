@@ -1,6 +1,7 @@
 use criterion::Criterion;
 use criterion::criterion_group;
 use criterion::criterion_main;
+use std::hint::black_box;
 
 use cidr::Ipv4Cidr;
 use ipnetwork::IpNetwork;
@@ -41,9 +42,11 @@ fn subnetwork_func(tests: usize) {
 
 fn criterion_benchmark(c: &mut Criterion) {
     let tests = 100;
-    c.bench_function("cidr", |b| b.iter(|| cidr_func(tests)));
-    c.bench_function("ipnetwork", |b| b.iter(|| ipnetwork_func(tests)));
-    c.bench_function("subnetwork", |b| b.iter(|| subnetwork_func(tests)));
+    c.bench_function("cidr", |b| b.iter(|| black_box(cidr_func(tests))));
+    c.bench_function("ipnetwork", |b| b.iter(|| black_box(ipnetwork_func(tests))));
+    c.bench_function("subnetwork", |b| {
+        b.iter(|| black_box(subnetwork_func(tests)))
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);
