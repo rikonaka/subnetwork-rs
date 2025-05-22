@@ -33,7 +33,7 @@ Target: x86_64-unknown-linux-gnu
 |  #3   |   28.32    | 9.85  |   28.65   | 9.57  |   29.02   | 10.68 |
 |  #4   |   28.23    | 8.90  |   28.91   | 9.81  |   29.17   | 10.11 |
 
-# Benchmark from criterion
+# Benchmark from criterion  
 
 ```bash
 cidr                    time:   [7.3136 ms 7.3865 ms 7.4748 ms]
@@ -65,7 +65,7 @@ Target: x86_64-unknown-linux-gnu
 
 # Test Content
 
-Run the 10,000 times calculations separately which return all ip's for subnet `192.168.0.0/16` (not printed), final statistics on the time required to run.
+Time to run 10,000 runs returning code from the `192.168.0.0/16` subnet IP.
 
 # Benchmark
 
