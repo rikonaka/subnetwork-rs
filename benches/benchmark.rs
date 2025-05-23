@@ -15,6 +15,7 @@ fn cidr_func(tests: usize) {
     for _ in 0..tests {
         for _addr in cidr {
             // println!("{}", _addr);
+            black_box(_addr);
         }
     }
 }
@@ -26,6 +27,7 @@ fn ipnetwork_func(tests: usize) {
     for _ in 0..tests {
         for _addr in net.iter() {
             // println!("{}", _addr);
+            black_box(_addr);
         }
     }
 }
@@ -36,6 +38,7 @@ fn subnetwork_func(tests: usize) {
     for _ in 0..tests {
         for _addr in pool {
             // println!("{}", _addr);
+            black_box(_addr);
         }
     }
 }
