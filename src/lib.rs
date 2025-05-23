@@ -55,7 +55,6 @@ impl fmt::Display for CrossIpv4Pool {
 
 impl CrossIpv4Pool {
     /// Returns an Ipv4 iterator over the cross different subnetwork.
-    ///
     /// # Example
     /// ```
     /// use subnetwork::CrossIpv4Pool;
@@ -70,9 +69,15 @@ impl CrossIpv4Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(start: Ipv4Addr, end: Ipv4Addr) -> Result<CrossIpv4Pool, SubnetworkError> {
-        let start_u32: u32 = start.into();
-        let end_u32: u32 = end.into();
+    pub fn new<T: Into<Ipv4AddrExt>>(
+        start: T,
+        end: Ipv4Addr,
+    ) -> Result<CrossIpv4Pool, SubnetworkError> {
+        let start_ip_ext: Ipv4AddrExt = start.into();
+        let end_ip_ext: Ipv4AddrExt = end.into();
+        let start_u32: u32 = start_ip_ext.addr;
+        let end_u32: u32 = end_ip_ext.addr;
+
         if start_u32 <= end_u32 {
             let cip = CrossIpv4Pool {
                 start: start_u32,
@@ -84,6 +89,20 @@ impl CrossIpv4Pool {
             let error_range = format!("{}-{}", start_u32, end_u32);
             Err(SubnetworkError::InvalidInput { msg: error_range })
         }
+    }
+    /// Check if ip pool contains this ip.
+    pub fn contain(&self, addr: Ipv4Addr) -> bool {
+        let addr: u32 = addr.into();
+        if addr <= self.end && addr >= self.start {
+            true
+        } else {
+            false
+        }
+    }
+    /// Returns the number of possible host address in this `CrossIpv4Pool`.
+    pub fn len(&self) -> usize {
+        let length = self.end - self.start;
+        length as usize
     }
 }
 
@@ -154,8 +173,7 @@ impl FromStr for Ipv4Pool {
 }
 
 impl Ipv4Pool {
-    /// Returns an Ipv4 iterator over the addres contained in the network.
-    ///
+    /// Returns an Ipv4 iterator over the address contained in the network.
     /// # Example
     /// ```
     /// use subnetwork::Ipv4Pool;
@@ -169,14 +187,15 @@ impl Ipv4Pool {
     ///     }
     /// }
     /// ```
-    pub fn new(addr: Ipv4Addr, prefix: u8) -> Result<Ipv4Pool, SubnetworkError> {
+    pub fn new<T: Into<Ipv4AddrExt>>(addr: T, prefix: u8) -> Result<Ipv4Pool, SubnetworkError> {
+        let addr_ext: Ipv4AddrExt = addr.into();
         if prefix > IPV4_PREFIX_MAX_LEN {
-            let error_addr = format!("{}/{}", addr, prefix);
+            let error_addr = format!("{}/{}", addr_ext, prefix);
             Err(SubnetworkError::InvalidInput {
                 msg: error_addr.to_string(),
             })
         } else {
-            let addr: u32 = addr.into();
+            let addr: u32 = addr_ext.addr;
             let mask: u32 = u32::MAX << (IPV4_PREFIX_MAX_LEN - prefix);
             let next = INIT_NEXT_VALUE as u32;
             let stop = 1 << (IPV4_PREFIX_MAX_LEN - prefix);
@@ -190,7 +209,6 @@ impl Ipv4Pool {
         }
     }
     /// Check if ip pool contains this ip.
-    ///
     /// # Example
     /// ```
     /// use std::net::Ipv4Addr;
@@ -224,15 +242,10 @@ impl Ipv4Pool {
         let ret = self.prefix + biggest;
         ret.into()
     }
-    /// Returns the number of possible addres in this `Ipv4Pool` (include 0 and 255)
-    pub fn size(&self) -> usize {
+    /// Returns the number of possible address in this `Ipv4Pool` (include 0 and 255).
+    pub fn len(&self) -> usize {
         let biggest = !self.mask + 1;
         biggest as usize
-    }
-    /// Returns the number of valid addres in this `Ipv4Pool` (NOT include 0 and 255)
-    pub fn len(&self) -> usize {
-        let length = !self.mask - 1;
-        length as usize
     }
 }
 
@@ -265,8 +278,7 @@ impl fmt::Display for CrossIpv6Pool {
 }
 
 impl CrossIpv6Pool {
-    /// Returns an Ipv4 iterator over the cross different subnetwork addres.
-    ///
+    /// Returns an Ipv4 iterator over the cross different subnetwork address.
     /// # Example
     /// ```
     /// use subnetwork::CrossIpv6Pool;
@@ -296,6 +308,20 @@ impl CrossIpv6Pool {
             let msg = format!("{}-{}", start, end);
             Err(SubnetworkError::InvalidInput { msg })
         }
+    }
+    /// Check if ip pool contains this ip.
+    pub fn contain(&self, addr: Ipv6Addr) -> bool {
+        let addr: u128 = addr.into();
+        if addr <= self.end && addr >= self.start {
+            true
+        } else {
+            false
+        }
+    }
+    /// Returns the number of possible host address in this `CrossIpv6Pool`.
+    pub fn len(&self) -> usize {
+        let length = self.end - self.start;
+        length as usize
     }
 }
 
@@ -364,8 +390,7 @@ impl FromStr for Ipv6Pool {
 }
 
 impl Ipv6Pool {
-    /// Returns an Ipv6 iterator over the addres contained in the network.
-    ///
+    /// Returns an Ipv6 iterator over the address contained in the network.
     /// # Example
     /// ```
     /// use subnetwork::Ipv6Pool;
@@ -401,7 +426,6 @@ impl Ipv6Pool {
         }
     }
     /// Check if ip pool contains this ip.
-    ///
     /// # Example
     /// ```
     /// use std::net::Ipv6Addr;
@@ -428,15 +452,10 @@ impl Ipv6Pool {
     pub fn network(&self) -> Ipv6Addr {
         self.prefix.into()
     }
-    /// Returns the number of possible host addres in this `Ipv6Pool` (include 0 and 255)
-    pub fn size(&self) -> usize {
+    /// Returns the number of possible host address in this `Ipv6Pool`.
+    pub fn len(&self) -> usize {
         let biggest = !self.mask + 1;
         biggest as usize
-    }
-    /// Returns the number of valid addres in this `Ipv6Pool` (NOT include 0 and 255)
-    pub fn len(&self) -> usize {
-        let length = !self.mask - 1;
-        length as usize
     }
 }
 
@@ -478,7 +497,16 @@ impl FromStr for Ipv4AddrExt {
 }
 
 impl Ipv4AddrExt {
-    /// Returns the largest identical prefix of two IP addres.
+    /// Creates a new IPv4AddrExt from four eight-bit octets.
+    pub fn new(a: u8, b: u8, c: u8, d: u8) -> Ipv4AddrExt {
+        let a_fix = (a as u32) << 24;
+        let b_fix = (b as u32) << 16;
+        let c_fix = (c as u32) << 8;
+        let d_fix = d as u32;
+        let addr = a_fix + b_fix + c_fix + d_fix;
+        Ipv4AddrExt { addr }
+    }
+    /// Returns the largest identical prefix of two IP address.
     /// # Example
     /// ```
     /// use subnetwork::Ipv4AddrExt;
@@ -494,13 +522,10 @@ impl Ipv4AddrExt {
     ///     assert_eq!(ret, 25);
     /// }
     /// ```
-    pub fn largest_identical_prefix(&self, target: Ipv4AddrExt) -> u32 {
+    pub fn largest_identical_prefix<T: Into<Ipv4AddrExt>>(&self, target: T) -> u32 {
         let a = self.addr;
-        let b = target.addr;
-        let mut mask = 1;
-        for _ in 0..(IPV4_PREFIX_MAX_LEN - 1) {
-            mask <<= 1;
-        }
+        let b = target.into().addr;
+        let mut mask = 1 << (IPV4_PREFIX_MAX_LEN - 2);
         let mut count = 0;
         for _ in 0..IPV4_PREFIX_MAX_LEN {
             if a & mask != b & mask {
@@ -549,6 +574,19 @@ impl FromStr for Ipv6AddrExt {
 }
 
 impl Ipv6AddrExt {
+    /// Creates a new IPv6 address from eight 16-bit segments.
+    pub fn new(a: u16, b: u16, c: u16, d: u16, e: u16, f: u16, g: u16, h: u16) -> Ipv6AddrExt {
+        let a_fix = (a as u128) << 112;
+        let b_fix = (b as u128) << 96;
+        let c_fix = (c as u128) << 80;
+        let d_fix = (d as u128) << 64;
+        let e_fix = (e as u128) << 48;
+        let f_fix = (f as u128) << 32;
+        let g_fix = (g as u128) << 16;
+        let h_fix = h as u128;
+        let addr = a_fix + b_fix + c_fix + d_fix + e_fix + f_fix + g_fix + h_fix;
+        Ipv6AddrExt { addr }
+    }
     /// Returns the node local scope multicast addr of this `Ipv6`.
     pub fn node_multicast(&self) -> Ipv6Addr {
         let node = Ipv6Addr::new(
@@ -588,10 +626,7 @@ impl Ipv6AddrExt {
     pub fn largest_identical_prefix(&self, target: Ipv6AddrExt) -> u128 {
         let a = self.addr;
         let b = target.addr;
-        let mut mask = 1;
-        for _ in 0..(IPV6_PREFIX_MAX_LEN - 1) {
-            mask <<= 1;
-        }
+        let mut mask = 1 << (IPV4_PREFIX_MAX_LEN - 2);
         let mut count = 0;
         for _ in 0..IPV6_PREFIX_MAX_LEN {
             if a & mask != b & mask {
@@ -610,7 +645,6 @@ pub struct NetmaskExt {
 
 impl NetmaskExt {
     /// Constructs a new `Ipv6` from a given `&str`.
-    ///
     /// # Example
     /// ```
     /// use subnetwork::NetmaskExt;
@@ -653,11 +687,92 @@ impl NetmaskExt {
 #[cfg(test)]
 mod tests {
     use super::*;
+    /* README.md examples */
+    #[test]
+    fn readme_example_1() {
+        let pool = Ipv4Pool::new(Ipv4Addr::new(192, 168, 1, 1), 24).unwrap();
+        // from 192.168.1.0 to 192.168.1.255
+        for ipv4 in pool {
+            println!("{}", ipv4);
+        }
+
+        let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
+        for ipv4 in pool {
+            println!("{}", ipv4);
+        }
+
+        let pool: Ipv4Pool = "192.168.1.0/24".parse().unwrap();
+        for ipv4 in pool {
+            println!("{}", ipv4);
+        }
+
+        let test_ipv4 = Ipv4Addr::new(192, 168, 1, 233);
+        assert_eq!(pool.contain(test_ipv4), true);
+
+        let broadcast = Ipv4Addr::new(192, 168, 1, 255);
+        assert_eq!(pool.broadcast(), broadcast);
+
+        let network = Ipv4Addr::new(192, 168, 1, 0);
+        assert_eq!(pool.network(), network);
+
+        assert_eq!(pool.len(), 256);
+        // pool is copied.
+        assert_eq!(pool.to_string(), "192.168.1.0/24, next 192.168.1.0");
+    }
+    #[test]
+    fn readme_example_2() {
+        let start = Ipv4Addr::new(192, 168, 1, 16);
+        let end = Ipv4Addr::new(192, 168, 3, 200);
+        let pool = CrossIpv4Pool::new(start, end).unwrap();
+        // include 192.168.1.16 and 192.168.3.200
+        for i in pool {
+            println!("{:?}", i);
+        }
+
+        let test_ipv4 = Ipv4Addr::new(192, 168, 1, 233);
+        assert_eq!(pool.contain(test_ipv4), true);
+        let test_ipv4 = Ipv4Addr::new(192, 168, 2, 0);
+        assert_eq!(pool.contain(test_ipv4), true);
+        let test_ipv4 = Ipv4Addr::new(192, 168, 3, 255);
+        assert_eq!(pool.contain(test_ipv4), false);
+        let test_ipv4 = Ipv4Addr::new(192, 168, 3, 200);
+        assert_eq!(pool.contain(test_ipv4), true);
+    }
+    #[test]
+    fn readme_example_3() {
+        // test1
+        let ip1 = Ipv4Addr::new(192, 168, 1, 1);
+        let ip2 = Ipv4Addr::new(192, 168, 1, 2);
+
+        let ip1ext: Ipv4AddrExt = ip1.into();
+        let ip2ext: Ipv4AddrExt = ip2.into();
+        assert_eq!(ip1ext.largest_identical_prefix(ip2ext), 25);
+
+        let ip1ext: Ipv4AddrExt = ip1.into();
+        assert_eq!(ip1ext.largest_identical_prefix(ip2), 24);
+
+        // test 2
+        let ip1 = Ipv4Addr::new(192, 168, 1, 136);
+        let ip2 = Ipv4Addr::new(192, 168, 1, 192);
+
+        let ip1ext: Ipv4AddrExt = ip1.into();
+        let ip2ext: Ipv4AddrExt = ip2.into();
+        assert_eq!(ip1ext.largest_identical_prefix(ip2ext), 25);
+    }
+    #[test]
+    fn abced() {
+        let a: u8 = 0b1100;
+        let b: u8 = 0b0011;
+        println!("{}", a + b);
+        println!("{}", a | b);
+    }
     /* Ipv4AddrExt */
     #[test]
     fn ipv4_addr_ext() {
         let ipv4 = Ipv4Addr::new(192, 168, 1, 1);
-        let _ipv4ext: Ipv4AddrExt = ipv4.into();
+        let ipv4_ext = Ipv4AddrExt::new(192, 168, 1, 1);
+        let _ipv4_ext: Ipv4AddrExt = ipv4.into();
+        assert_eq!(_ipv4_ext.addr, ipv4_ext.addr);
 
         let pool: Ipv4Pool = "192.168.1.1/24".parse().unwrap();
         let mut count = 0;
@@ -788,16 +903,16 @@ mod tests {
     #[test]
     fn ipv4_pool_size() {
         let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
-        let size = pool.size();
-        println!("{:?}", size);
-        assert_eq!(size, 256);
+        let length = pool.len();
+        println!("{:?}", length);
+        assert_eq!(length, 256);
     }
     #[test]
     fn ipv4_pool_len() {
         let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
-        let size = pool.len();
-        println!("{:?}", size);
-        assert_eq!(size, 254);
+        let length = pool.len();
+        println!("{:?}", length);
+        assert_eq!(length, 256);
     }
     #[test]
     fn test_largest_identical_prefix() {
