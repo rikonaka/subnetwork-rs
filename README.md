@@ -4,24 +4,26 @@ Returns an iterator that iterates over all subnet IPs.
 
 [![Rust](https://github.com/rikonaka/subnetwork-rs/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/rikonaka/subnetwork-rs/actions/workflows/rust.yml)
 
-## Example 1
+## Standard Example
 
 ```rust
 use std::net::Ipv4Addr;
 use subnetwork::Ipv4Pool;
+use std::str::FromStr;
 
 fn main() {
-    let ipv4_pool = Ipv4Pool::from("192.168.1.0/24").unwrap();
-    for i in ipv4_pool {
+    let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
+    // or
+    // let pool: Ipv4Pool = "192.168.1.0/24".parse().unwrap();
+    for i in pool {
         println!("{:?}", i);
     }
     let ipv4 = Ipv4Addr::new(192, 168, 1, 1);
-    let ret = ipv4_pool.contain(ipv4);
-    assert_eq!(ret, true);
+    assert_eq!(pool.contain(ipv4);, true);
 }
 ```
 
-## Example 2
+## Special Example
 
 ```rust
 use std::net::Ipv4Addr;

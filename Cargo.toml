@@ -1,6 +1,6 @@
 [package]
 name = "subnetwork"
-version = "0.5.4"
+version = "0.6.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 description = "Return all ip addresses of a subnetwork"
@@ -19,6 +19,7 @@ thiserror = "^2"
 criterion = { version = "^0", features = ["html_reports"] }
 cidr = "0.3.1"
 ipnetwork = "0.21.1"
+ipnet = "2.11.0"
 
 [[bench]]
 name = "benchmark"
