@@ -92,6 +92,7 @@ fn main() {
 
 ```rust
 use std::net::Ipv6Addr;
+use std::str::FromStr;
 use subnetwork::Ipv6AddrExt;
 
 fn main() {
