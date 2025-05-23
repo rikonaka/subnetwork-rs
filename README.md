@@ -38,7 +38,7 @@ fn main() {
     assert_eq!(pool.network(), network);
 
     assert_eq!(pool.len(), 256);
-    // pool is copied.
+    // pool is copied
     assert_eq!(pool.to_string(), "192.168.1.0/24, next 192.168.1.0");
 }
 ```
@@ -69,22 +69,60 @@ fn main() {
 }
 ```
 
-## Ipv4AddrExt
+## Extended Ipv4Addr
 
 ```rust
 use std::net::Ipv4Addr;
 use subnetwork::Ipv4AddrExt;
 
 fn main() {
+    let ip1 = Ipv4Addr::new(192, 168, 1, 0);
+    let ip2 = Ipv4Addr::new(192, 168, 1, 255);
+    let ip1ext: Ipv4AddrExt = ip1.into();
+    assert_eq!(ip1ext.largest_identical_prefix(ip2), 24);
+
     let ip1 = Ipv4Addr::new(192, 168, 1, 136);
     let ip2 = Ipv4Addr::new(192, 168, 1, 192);
-
-    let ip1ext: Ipv4AddrExt = ip1.into();
-    let ip2ext: Ipv4AddrExt = ip2.into();
-    assert_eq!(ip1ext.largest_identical_prefix(ip2ext), 25);
-
     let ip1ext: Ipv4AddrExt = ip1.into();
     assert_eq!(ip1ext.largest_identical_prefix(ip2), 25);
+}
+```
+
+## Extended Ipv6Addr
+
+```rust
+use std::net::Ipv6Addr;
+use subnetwork::Ipv6AddrExt;
+
+fn main() {
+    let ipv6 = Ipv6Addr::from_str("::ffff:192.10.2.255").unwrap();
+    let ipv6_ext: Ipv6AddrExt = ipv6.into();
+
+    let ipv6_node_multicast = Ipv6Addr::from_str("ff01::1:ff0a:2ff").unwrap();
+    assert_eq!(ipv6_ext.node_multicast(), ipv6_node_multicast);
+
+    let ipv6_link_multicast = Ipv6Addr::from_str("ff02::1:ff0a:2ff").unwrap();
+    assert_eq!(ipv6_ext.link_multicast(), ipv6_link_multicast);
+
+    let ipv6_site_multicast = Ipv6Addr::from_str("ff05::1:ff0a:2ff").unwrap();
+    assert_eq!(ipv6_ext.site_multicast(), ipv6_site_multicast);
+}
+```
+
+## Extended Netmask
+
+```rust
+use std::net::Ipv4Addr;
+use subnetwork::NetmaskExt;
+
+fn main() {
+    let netmask = NetmaskExt::new(24);
+    let netmask_addr = netmask.to_ipv4().unwrap();
+    assert_eq!(netmask_addr, Ipv4Addr::new(255, 255, 255, 0));
+
+    let netmask = NetmaskExt::new(26);
+    let netmask_addr = netmask.to_ipv4().unwrap();
+    assert_eq!(netmask_addr, Ipv4Addr::new(255, 255, 255, 192));
 }
 ```
 

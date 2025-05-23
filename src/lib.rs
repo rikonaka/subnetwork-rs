@@ -517,24 +517,23 @@ impl Ipv4AddrExt {
     ///     let ipv4_1 = Ipv4Addr::new(192, 168, 1, 136);
     ///     let ipv4_2 = Ipv4Addr::new(192, 168, 1, 192);
     ///     let ipv4ext_1: Ipv4AddrExt = ipv4_1.into();
-    ///     let ipv4ext_2: Ipv4AddrExt = ipv4_2.into();
-    ///     let ret = ipv4ext_1.largest_identical_prefix(ipv4ext_2);
+    ///     let ret = ipv4ext_1.largest_identical_prefix(ipv4_2);
     ///     assert_eq!(ret, 25);
     /// }
     /// ```
-    pub fn largest_identical_prefix<T: Into<Ipv4AddrExt>>(&self, target: T) -> u32 {
+    pub fn largest_identical_prefix<T: Into<Ipv4AddrExt>>(&self, target: T) -> u8 {
         let a = self.addr;
         let b = target.into().addr;
-        let mut mask = 1 << (IPV4_PREFIX_MAX_LEN - 2);
-        let mut count = 0;
-        for _ in 0..IPV4_PREFIX_MAX_LEN {
+        let init_mask = 2u32.pow(31);
+        let mut mask = init_mask;
+
+        for c in 0..IPV4_PREFIX_MAX_LEN {
             if a & mask != b & mask {
-                break;
+                return c;
             }
-            count += 1;
-            mask >>= 1;
+            mask = (mask >> 1) + init_mask;
         }
-        count
+        0
     }
 }
 
@@ -590,52 +589,52 @@ impl Ipv6AddrExt {
     /// Returns the node local scope multicast addr of this `Ipv6`.
     pub fn node_multicast(&self) -> Ipv6Addr {
         let node = Ipv6Addr::new(
-            0xFF01, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xFF00, 0x0000,
+            0xff01, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xff00, 0x0000,
         );
-        let node: Ipv6AddrExt = node.into();
         let mask = Ipv6Addr::new(
-            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00FF, 0xFFFF,
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00ff, 0xffff,
         );
-        let mask: Ipv6AddrExt = mask.into();
-        (node.addr + (mask.addr & self.addr)).into()
+        let node_u128: u128 = node.into();
+        let mask_u128: u128 = mask.into();
+        (node_u128 + (mask_u128 & self.addr)).into()
     }
     /// Returns the link local scope multicast addr of this `Ipv6`.
     pub fn link_multicast(&self) -> Ipv6Addr {
         let link = Ipv6Addr::new(
-            0xFF02, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xFF00, 0x0000,
+            0xff02, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xff00, 0x0000,
         );
-        let link: Ipv6AddrExt = link.into();
         let mask = Ipv6Addr::new(
-            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00FF, 0xFFFF,
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00ff, 0xffff,
         );
-        let mask: Ipv6AddrExt = mask.into();
-        (link.addr + (mask.addr & self.addr)).into()
+        let link_u128: u128 = link.into();
+        let mask_u128: u128 = mask.into();
+        (link_u128 + (mask_u128 & self.addr)).into()
     }
     /// Returns the site local scope multicast addr of this `Ipv6`.
     pub fn site_multicast(&self) -> Ipv6Addr {
         let site = Ipv6Addr::new(
-            0xFF05, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xFF00, 0x0000,
+            0xff05, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001, 0xff00, 0x0000,
         );
-        let site: Ipv6AddrExt = site.into();
         let mask = Ipv6Addr::new(
-            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00FF, 0xFFFF,
+            0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x00ff, 0xffff,
         );
-        let mask: Ipv6AddrExt = mask.into();
-        (site.addr + (mask.addr & self.addr)).into()
+        let site_u128: u128 = site.into();
+        let mask_u128: u128 = mask.into();
+        (site_u128 + (mask_u128 & self.addr)).into()
     }
-    pub fn largest_identical_prefix(&self, target: Ipv6AddrExt) -> u128 {
+    pub fn largest_identical_prefix<T: Into<Ipv6AddrExt>>(&self, target: T) -> u8 {
         let a = self.addr;
-        let b = target.addr;
-        let mut mask = 1 << (IPV4_PREFIX_MAX_LEN - 2);
-        let mut count = 0;
-        for _ in 0..IPV6_PREFIX_MAX_LEN {
+        let b = target.into().addr;
+        let init_mask = 2u128.pow(127);
+        let mut mask = init_mask;
+
+        for c in 0..IPV6_PREFIX_MAX_LEN {
             if a & mask != b & mask {
-                break;
+                return c;
             }
-            count += 1;
-            mask >>= 1;
+            mask = (mask >> 1) + init_mask;
         }
-        count - 1
+        0
     }
 }
 
@@ -741,12 +740,8 @@ mod tests {
     #[test]
     fn readme_example_3() {
         // test1
-        let ip1 = Ipv4Addr::new(192, 168, 1, 1);
-        let ip2 = Ipv4Addr::new(192, 168, 1, 2);
-
-        let ip1ext: Ipv4AddrExt = ip1.into();
-        let ip2ext: Ipv4AddrExt = ip2.into();
-        assert_eq!(ip1ext.largest_identical_prefix(ip2ext), 25);
+        let ip1 = Ipv4Addr::new(192, 168, 1, 0);
+        let ip2 = Ipv4Addr::new(192, 168, 1, 255);
 
         let ip1ext: Ipv4AddrExt = ip1.into();
         assert_eq!(ip1ext.largest_identical_prefix(ip2), 24);
@@ -756,56 +751,49 @@ mod tests {
         let ip2 = Ipv4Addr::new(192, 168, 1, 192);
 
         let ip1ext: Ipv4AddrExt = ip1.into();
-        let ip2ext: Ipv4AddrExt = ip2.into();
-        assert_eq!(ip1ext.largest_identical_prefix(ip2ext), 25);
+        assert_eq!(ip1ext.largest_identical_prefix(ip2), 25);
     }
     #[test]
-    fn abced() {
-        let a: u8 = 0b1100;
-        let b: u8 = 0b0011;
-        println!("{}", a + b);
-        println!("{}", a | b);
+    fn readme_example_4() {
+        let ipv6 = Ipv6Addr::from_str("::ffff:192.10.2.255").unwrap();
+        let ipv6_ext: Ipv6AddrExt = ipv6.into();
+
+        let ipv6_node_multicast = Ipv6Addr::from_str("ff01::1:ff0a:2ff").unwrap();
+        assert_eq!(ipv6_ext.node_multicast(), ipv6_node_multicast);
+
+        let ipv6_link_multicast = Ipv6Addr::from_str("ff02::1:ff0a:2ff").unwrap();
+        assert_eq!(ipv6_ext.link_multicast(), ipv6_link_multicast);
+
+        let ipv6_site_multicast = Ipv6Addr::from_str("ff05::1:ff0a:2ff").unwrap();
+        assert_eq!(ipv6_ext.site_multicast(), ipv6_site_multicast);
     }
-    /* Ipv4AddrExt */
     #[test]
-    fn ipv4_addr_ext() {
+    fn readme_example_5() {
+        let netmask = NetmaskExt::new(24);
+        let netmask_addr = netmask.to_ipv4().unwrap();
+        assert_eq!(netmask_addr, Ipv4Addr::new(255, 255, 255, 0));
+
+        let netmask = NetmaskExt::new(26);
+        let netmask_addr = netmask.to_ipv4().unwrap();
+        assert_eq!(netmask_addr, Ipv4Addr::new(255, 255, 255, 192));
+    }
+    /* Others */
+    #[test]
+    fn ipv4_methods() {
         let ipv4 = Ipv4Addr::new(192, 168, 1, 1);
-        let ipv4_ext = Ipv4AddrExt::new(192, 168, 1, 1);
-        let _ipv4_ext: Ipv4AddrExt = ipv4.into();
-        assert_eq!(_ipv4_ext.addr, ipv4_ext.addr);
-
-        let pool: Ipv4Pool = "192.168.1.1/24".parse().unwrap();
-        let mut count = 0;
-        for i in pool {
-            println!("{:?}", i);
-            count += 1;
+        if ipv4.is_private() {
+            println!("{} is private", ipv4);
+        } else {
+            println!("{} is not private", ipv4);
         }
-        assert_eq!(count, 256);
-    }
-    /* netmask */
-    #[test]
-    fn netmask() {
-        let prefix = 24;
-        let netmask = NetmaskExt::new(prefix);
-        let ipv4_addr = netmask.to_ipv4().unwrap();
-        assert_eq!(ipv4_addr, Ipv4Addr::new(255, 255, 255, 0));
-
-        let prefix = 26;
-        let netmask = NetmaskExt::new(prefix);
-        let ipv4_addr = netmask.to_ipv4().unwrap();
-        assert_eq!(ipv4_addr, Ipv4Addr::new(255, 255, 255, 192));
-    }
-    /* cross ipv4 pool */
-    #[test]
-    fn cross_ipv4_pool_print() {
-        let start = Ipv4Addr::new(192, 168, 1, 1);
-        let end = Ipv4Addr::new(192, 168, 3, 254);
-        let pool = CrossIpv4Pool::new(start, end).unwrap();
-        for i in pool {
-            println!("{:?}", i);
+        let ipv6 = Ipv6Addr::new(0xfe80, 0, 0, 0, 0x20c, 0x29ff, 0xfedd, 0xf57);
+        if ipv6.is_multicast() {
+            println!("{} is multicast", ipv6);
+        } else {
+            println!("{} is not multicast", ipv6);
         }
     }
-    /* ipv4 test */
+    /* Ipv4 */
     #[test]
     fn ipv4_pool_print() {
         let test_str = "192.168.1.0/24";
@@ -826,7 +814,7 @@ mod tests {
         println!("{:8b}", ipv4.addr);
         assert_eq!(ipv4.addr, 3232235777);
     }
-    /* ipv6 test */
+    /* Ipv6 */
     #[test]
     fn ipv6() {
         let ipv6 = Ipv6AddrExt::from_str("::ffff:192.10.2.255").unwrap();
@@ -834,116 +822,8 @@ mod tests {
         assert_eq!(ipv6.addr, 281473903624959);
     }
     #[test]
-    fn ipv6_node() {
-        // let a: u8 = 0b1100;
-        // let b: u8 = 0b0011;
-        // println!("{}", a + b);
-        let ipv6 = Ipv6AddrExt::from_str("::ffff:192.10.2.255").unwrap();
-        let ipv6_2: Ipv6Addr = "ff01::1:ff0a:2ff".parse().unwrap();
-        println!("{:?}", ipv6.node_multicast());
-        assert_eq!(ipv6.node_multicast(), ipv6_2);
-    }
-    #[test]
-    fn ipv6_link() {
-        let ipv6 = Ipv6AddrExt::from_str("::ffff:192.10.2.255").unwrap();
-        let ipv6_2: Ipv6Addr = "ff02::1:ff0a:2ff".parse().unwrap();
-        println!("{:?}", ipv6.link_multicast());
-        assert_eq!(ipv6.link_multicast(), ipv6_2);
-    }
-    /* ipv4 pool test */
-    #[test]
-    fn ipv4_pool() {
-        let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
-        for i in pool {
-            println!("{:?}", i);
-        }
-        assert_eq!(1, 1);
-    }
-    #[test]
-    fn ipv4_pool_new() {
-        let ip = Ipv4Addr::new(192, 168, 1, 1);
-        let pool = Ipv4Pool::new(ip, 24).unwrap();
-        for i in pool {
-            println!("{:?}", i);
-        }
-        assert_eq!(1, 1);
-    }
-    #[test]
-    fn ipv4_pool_contain_1() {
-        let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
-        let ip = Ipv4Addr::new(192, 168, 1, 20);
-        let ret = pool.contain(ip);
-        println!("{:?}", ret);
-        assert_eq!(ret, true);
-    }
-    #[test]
-    fn ipv4_pool_contain_2() {
-        let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
-        let ip = Ipv4Addr::new(10, 8, 0, 20);
-        let ret = pool.contain(ip);
-        println!("{:?}", ret);
-        assert_eq!(ret, false);
-    }
-    #[test]
-    fn ipv4_pool_network() {
-        let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
-        let network = pool.network();
-        let network_2 = Ipv4Addr::new(192, 168, 1, 0);
-        println!("{:?}", network);
-        assert_eq!(network, network_2);
-    }
-    #[test]
-    fn ipv4_pool_broadcast() {
-        let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
-        let broadcast = pool.broadcast();
-        let broadcast_2 = Ipv4Addr::new(192, 168, 1, 255);
-        println!("{:?}", broadcast);
-        assert_eq!(broadcast, broadcast_2);
-    }
-    #[test]
-    fn ipv4_pool_size() {
-        let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
-        let length = pool.len();
-        println!("{:?}", length);
-        assert_eq!(length, 256);
-    }
-    #[test]
-    fn ipv4_pool_len() {
-        let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
-        let length = pool.len();
-        println!("{:?}", length);
-        assert_eq!(length, 256);
-    }
-    #[test]
-    fn test_largest_identical_prefix() {
-        let ipv4_1 = Ipv4AddrExt::from_str("192.168.1.136").unwrap();
-        let ipv4_2 = Ipv4AddrExt::from_str("192.168.1.192").unwrap();
-        let ret = ipv4_1.largest_identical_prefix(ipv4_2);
-        println!("{}", ret);
-    }
-    #[test]
-    fn test_max_idt() {
-        let a: u32 = 14;
-        let b: u32 = 12;
-        let mut mask = 1;
-        for _ in 0..31 {
-            mask <<= 1;
-        }
-        println!("{}", mask);
-
-        let mut count = 0;
-        for _ in 0..32 {
-            if a & mask != b & mask {
-                break;
-            }
-            count += 1;
-            mask >>= 1;
-        }
-        println!("{}", count);
-    }
-    #[test]
-    // #[should_panic]
     fn test_github_issues_1() {
+        // return error instead of panic
         let _pool1 = Ipv4Pool::from_str("1.2.3.4/33");
         let _pool2 = Ipv4Pool::from_str("1.2.3.4/");
         let _pool3 = Ipv4Pool::from_str("nonip/24");
