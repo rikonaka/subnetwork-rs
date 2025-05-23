@@ -7,8 +7,9 @@ fn my_test() {
     let ipv4 = Ipv4Addr::new(192, 168, 0, 0);
     let ip = IpAddr::V4(ipv4);
     let net = IpNetwork::new(ip, 16).unwrap();
-    for _addr in net.iter() {
-        // println!("{}", _addr);
+    for addr in net.iter() {
+        // println!("{}", addr);
+        black_box(addr);
     }
 }
 

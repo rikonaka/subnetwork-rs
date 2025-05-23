@@ -1,4 +1,6 @@
-# Test Environment (2025-5-22)
+# Test Environment (2025-5-23)
+
+> Thanks to Reddit user `jaskij`, `Trader-One` and `CowRepresentative820` 😉.
 
 CPU: AMD 5950x
 
@@ -17,86 +19,73 @@ Target: x86_64-unknown-linux-gnu
 |  id   |   subnetwork    |    ipnetwork    |      cidr       |
 | :---: | :-------------: | :-------------: | :-------------: |
 |       | **total (sec)** | **total (sec)** | **total (sec)** |
-|  #1   |      11.11      |      11.44      |      11.32      |
-|  #2   |      11.08      |      11.43      |      11.34      |
-|  #3   |      11.08      |      11.41      |      11.46      |
-|  #4   |      11.10      |      11.30      |      11.25      |
-|  #5   |      11.12      |      11.42      |      11.31      |
-|  #6   |      11.13      |      11.39      |      11.34      |
+|  #1   |      1.78       |      2.10       |      1.79       |
+|  #2   |      1.78       |      2.13       |      1.83       |
+|  #3   |      1.77       |      2.11       |      1.81       |
+|  #4   |      1.75       |      2.08       |      1.82       |
+|  #5   |      1.78       |      2.09       |      1.81       |
+|  #6   |      1.77       |      2.10       |      1.81       |
 
 # Benchmark from criterion
 
 ## First Shot
 
 ```bash
-cidr                    time:   [8.5702 ms 8.5896 ms 8.6121 ms]
+cidr                    time:   [10.047 ms 10.062 ms 10.075 ms]
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) low severe
+
+ipnetwork               time:   [39.893 ms 39.906 ms 39.923 ms]
 Found 3 outliers among 100 measurements (3.00%)
-  2 (2.00%) high mild
-  1 (1.00%) high severe
+  1 (1.00%) high mild
+  2 (2.00%) high severe
 
-ipnetwork               time:   [10.720 ms 10.758 ms 10.799 ms]
-Found 8 outliers among 100 measurements (8.00%)
-  8 (8.00%) high mild
-
-subnetwork              time:   [7.1939 ms 7.2092 ms 7.2273 ms]
-Found 5 outliers among 100 measurements (5.00%)
-  1 (1.00%) low mild
-  3 (3.00%) high mild
-  1 (1.00%) high severe
+subnetwork              time:   [8.2594 ms 8.2833 ms 8.3078 ms]
 ```
 
 ## Second Shot
 
 ```bash
-cidr                    time:   [8.4223 ms 8.4636 ms 8.5133 ms]
-                        change: [−1.9902% −1.4673% −0.8426%] (p = 0.00 < 0.05)
+cidr                    time:   [10.088 ms 10.101 ms 10.115 ms]
+                        change: [+0.1997% +0.3941% +0.5860%] (p = 0.00 < 0.05)
                         Change within noise threshold.
-Found 4 outliers among 100 measurements (4.00%)
-  2 (2.00%) high mild
-  2 (2.00%) high severe
 
-ipnetwork               time:   [8.5526 ms 8.5825 ms 8.6128 ms]
-                        change: [−20.641% −20.223% −19.807%] (p = 0.00 < 0.05)
-                        Performance has improved.
-
-subnetwork              time:   [6.9187 ms 6.9336 ms 6.9495 ms]
-                        change: [−4.1210% −3.8231% −3.5048%] (p = 0.00 < 0.05)
-                        Performance has improved.
-Found 11 outliers among 100 measurements (11.00%)
-  10 (10.00%) high mild
+ipnetwork               time:   [40.746 ms 40.759 ms 40.774 ms]
+                        change: [+2.0819% +2.1379% +2.1897%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+Found 1 outliers among 100 measurements (1.00%)
   1 (1.00%) high severe
+
+subnetwork              time:   [8.2852 ms 8.3096 ms 8.3335 ms]
+                        change: [−0.1052% +0.3175% +0.7279%] (p = 0.14 > 0.05)
+                        No change in performance detected.
 ```
 
 ## Third Shot
 
 ```bash
-cidr                    time:   [8.4565 ms 8.4634 ms 8.4696 ms]
-                        change: [−0.5825% −0.0018% +0.4944%] (p = 1.00 > 0.05)
-                        No change in performance detected.
-Found 12 outliers among 100 measurements (12.00%)
-  3 (3.00%) low severe
-  3 (3.00%) high mild
-  6 (6.00%) high severe
-
-ipnetwork               time:   [8.5778 ms 8.5932 ms 8.6080 ms]
-                        change: [−0.2714% +0.1248% +0.5196%] (p = 0.53 > 0.05)
-                        No change in performance detected.
-Found 27 outliers among 100 measurements (27.00%)
-  15 (15.00%) low severe
-  2 (2.00%) low mild
-  3 (3.00%) high mild
-  7 (7.00%) high severe
-
-subnetwork              time:   [7.0644 ms 7.0712 ms 7.0769 ms]
-                        change: [+1.7279% +1.9837% +2.2174%] (p = 0.00 < 0.05)
+cidr                    time:   [10.744 ms 10.808 ms 10.883 ms]
+                        change: [+6.2596% +7.0023% +7.6855%] (p = 0.00 < 0.05)
                         Performance has regressed.
-Found 10 outliers among 100 measurements (10.00%)
-  2 (2.00%) low severe
-  2 (2.00%) high mild
-  6 (6.00%) high severe
-```
+Found 7 outliers among 100 measurements (7.00%)
+  4 (4.00%) high mild
+  3 (3.00%) high severe
 
-I found that on my other AMD desktop, `subnetwork` outperformed the other two libraries, but on an Intel laptop the opposite was true.
+ipnetwork               time:   [39.897 ms 39.915 ms 39.937 ms]
+                        change: [−2.1285% −2.0728% −2.0100%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 7 outliers among 100 measurements (7.00%)
+  3 (3.00%) high mild
+  4 (4.00%) high severe
+
+subnetwork              time:   [8.1547 ms 8.1616 ms 8.1706 ms]
+                        change: [−2.0800% −1.7807% −1.4760%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 13 outliers among 100 measurements (13.00%)
+  2 (2.00%) low mild
+  6 (6.00%) high mild
+  5 (5.00%) high severe
+```
 
 # Test Environment (old)
 
