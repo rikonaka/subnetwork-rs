@@ -1,6 +1,6 @@
 # subnetwork
 
-Returns an iterator that iterates over all subnet IPs.
+A library for subnetting and IP address handling.
 
 [![Rust](https://github.com/rikonaka/subnetwork-rs/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/rikonaka/subnetwork-rs/actions/workflows/rust.yml)
 
