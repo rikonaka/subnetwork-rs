@@ -14,6 +14,10 @@ Target: x86_64-unknown-linux-gnu
 | :-----: | :--------: | :----: | :-------: | :---: |
 | version |   0.5.4    | 2.11.0 |  0.21.0   | 0.3.1 |
 
+## Test Content
+
+Returns all subnet IPs within 192.168.0.0/16.
+
 ## Benchmark from criterion
 
 ### First Shot

@@ -90,6 +90,10 @@ impl CrossIpv4Pool {
             Err(SubnetworkError::InvalidInput { msg: error_range })
         }
     }
+    /// Extract all IPs.
+    pub fn to_vec(&self) -> Vec<Ipv4Addr> {
+        self.into_iter().collect()
+    }
     /// Check if ip pool contains this ip.
     pub fn contain(&self, addr: Ipv4Addr) -> bool {
         let addr: u32 = addr.into();
@@ -174,6 +178,7 @@ impl FromStr for Ipv4Pool {
 
 impl Ipv4Pool {
     /// Returns an Ipv4 iterator over the address contained in the network.
+    /// Include network address and broadcast address.
     /// # Example
     /// ```
     /// use subnetwork::Ipv4Pool;
@@ -207,6 +212,10 @@ impl Ipv4Pool {
                 stop,
             });
         }
+    }
+    /// Extract all IPs.
+    pub fn to_vec(&self) -> Vec<Ipv4Addr> {
+        self.into_iter().collect()
     }
     /// Check if ip pool contains this ip.
     /// # Example
@@ -309,6 +318,10 @@ impl CrossIpv6Pool {
             Err(SubnetworkError::InvalidInput { msg })
         }
     }
+    /// Extract all IPs.
+    pub fn to_vec(&self) -> Vec<Ipv6Addr> {
+        self.into_iter().collect()
+    }
     /// Check if ip pool contains this ip.
     pub fn contain(&self, addr: Ipv6Addr) -> bool {
         let addr: u128 = addr.into();
@@ -391,6 +404,7 @@ impl FromStr for Ipv6Pool {
 
 impl Ipv6Pool {
     /// Returns an Ipv6 iterator over the address contained in the network.
+    /// Include network address and broadcast address.
     /// # Example
     /// ```
     /// use subnetwork::Ipv6Pool;
@@ -424,6 +438,10 @@ impl Ipv6Pool {
                 stop,
             })
         }
+    }
+    /// Extract all IPs.
+    pub fn to_vec(&self) -> Vec<Ipv6Addr> {
+        self.into_iter().collect()
     }
     /// Check if ip pool contains this ip.
     /// # Example
