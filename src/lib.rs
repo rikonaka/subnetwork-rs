@@ -1,11 +1,13 @@
 //! The `subnetwork` crate provides a set of APIs to work with IP CIDRs in Rust.
 use std::fmt;
 use std::net::AddrParseError;
+use std::net::IpAddr;
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use std::num::ParseIntError;
 use std::result;
 use std::str::FromStr;
+use std::u32;
 use thiserror::Error;
 
 const INIT_NEXT_VALUE: u8 = 0;
@@ -661,7 +663,7 @@ pub struct NetmaskExt {
 }
 
 impl NetmaskExt {
-    /// Constructs a new `Ipv6` from a given `&str`.
+    /// Constructs a new `NetmaskExt` from a given prefix.
     /// # Example
     /// ```
     /// use subnetwork::NetmaskExt;
@@ -674,6 +676,47 @@ impl NetmaskExt {
     /// ```
     pub fn new(prefix: u8) -> NetmaskExt {
         NetmaskExt { prefix }
+    }
+    /// Constructs a new `NetmaskExt` from a given IpAddr (like 255.255.255.0).
+    /// # Example
+    /// ```
+    /// use subnetwork::NetmaskExt;
+    ///
+    /// fn main() {
+    ///     let addr = IpAddr::V4(Ipv4Addr::new(255, 255, 255, 0));
+    ///     let netmask = NetmaskExt::from_addr(addr);
+    ///     // 255.255.255.0
+    ///     let prefix = netmask.get_prefix();
+    ///     assert_eq!(prefix, 24)
+    /// }
+    /// ```
+    pub fn from_addr(addr: IpAddr) -> NetmaskExt {
+        let mask = 0b10000000;
+        let find_prefix = || -> u8 {
+            let octets = match addr {
+                IpAddr::V4(ipv4_addr) => ipv4_addr.octets().to_vec(),
+                IpAddr::V6(ipv6_addr) => ipv6_addr.octets().to_vec(),
+            };
+            let mut prefix = 0;
+            for o in octets {
+                let mut no = o;
+                for _ in 0..8 {
+                    if mask & no == mask {
+                        prefix += 1;
+                        no <<= 1;
+                    } else {
+                        return prefix;
+                    }
+                }
+            }
+            // default value
+            0
+        };
+        let prefix = find_prefix();
+        NetmaskExt { prefix }
+    }
+    pub fn get_prefix(&self) -> u8 {
+        self.prefix
     }
     pub fn to_ipv4(&self) -> Result<Ipv4Addr, SubnetworkError> {
         if self.prefix == 0 {
@@ -794,6 +837,32 @@ mod tests {
         let netmask = NetmaskExt::new(26);
         let netmask_addr = netmask.to_ipv4().unwrap();
         assert_eq!(netmask_addr, Ipv4Addr::new(255, 255, 255, 192));
+    }
+    #[test]
+    fn netmask_ext() {
+        let addr = IpAddr::V4(Ipv4Addr::new(255, 255, 255, 0));
+        let netmask = NetmaskExt::from_addr(addr);
+        // 255.255.255.0
+        let prefix = netmask.get_prefix();
+        assert_eq!(prefix, 24);
+
+        let addr = IpAddr::V4(Ipv4Addr::new(255, 255, 255, 192));
+        let netmask = NetmaskExt::from_addr(addr);
+        // 255.255.255.0
+        let prefix = netmask.get_prefix();
+        assert_eq!(prefix, 26);
+
+        let addr = IpAddr::V4(Ipv4Addr::new(255, 255, 0, 0));
+        let netmask = NetmaskExt::from_addr(addr);
+        // 255.255.255.0
+        let prefix = netmask.get_prefix();
+        assert_eq!(prefix, 16);
+
+        let addr = IpAddr::V4(Ipv4Addr::new(255, 255, 192, 0));
+        let netmask = NetmaskExt::from_addr(addr);
+        // 255.255.255.0
+        let prefix = netmask.get_prefix();
+        assert_eq!(prefix, 18);
     }
     /* Others */
     #[test]
