@@ -658,6 +658,7 @@ impl Ipv6AddrExt {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct NetmaskExt {
     prefix: u8,
 }
@@ -691,33 +692,26 @@ impl NetmaskExt {
     /// }
     /// ```
     pub fn from_addr(addr: IpAddr) -> NetmaskExt {
-        let mask = 0b10000000;
-        let find_prefix = || -> u8 {
-            let octets = match addr {
-                IpAddr::V4(ipv4_addr) => ipv4_addr.octets().to_vec(),
-                IpAddr::V6(ipv6_addr) => ipv6_addr.octets().to_vec(),
-            };
-            let mut prefix = 0;
-            for o in octets {
-                let mut no = o;
-                for _ in 0..8 {
-                    if mask & no == mask {
-                        prefix += 1;
-                        no <<= 1;
-                    } else {
-                        return prefix;
-                    }
-                }
+        // 255.255.255.0, 255.255.192.0 .etc
+        let prefix = match addr {
+            IpAddr::V4(ipv4) => {
+                let mask = u32::from_be_bytes(ipv4.octets());
+                let prefix = mask.count_ones() as u8;
+                prefix
             }
-            // default value
-            0
+            IpAddr::V6(ipv6) => {
+                let mask = u128::from_be_bytes(ipv6.octets());
+                let prefix = mask.count_ones() as u8;
+                prefix
+            }
         };
-        let prefix = find_prefix();
         NetmaskExt { prefix }
     }
+    /// Return netmask address's prefix length.
     pub fn get_prefix(&self) -> u8 {
         self.prefix
     }
+    /// Convert to Ipv4Addr address.
     pub fn to_ipv4(&self) -> Result<Ipv4Addr, SubnetworkError> {
         if self.prefix == 0 {
             Ok((0 as u32).into())
@@ -730,6 +724,7 @@ impl NetmaskExt {
             }
         }
     }
+    /// Convert to Ipv6Addr address.
     pub fn to_ipv6(&self) -> Result<Ipv6Addr, SubnetworkError> {
         if self.prefix == 0 {
             Ok((0 as u128).into())
