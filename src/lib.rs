@@ -142,9 +142,7 @@ impl fmt::Display for Ipv4Pool {
             mask <<= 1;
             prefix += 1;
         }
-        let now_addr = self.prefix + self.next;
-        let now_addr: Ipv4Addr = now_addr.into();
-        write!(f, "{}/{}, next {}", prefix_addr, prefix, now_addr)
+        write!(f, "{}/{}", prefix_addr, prefix)
     }
 }
 
@@ -476,6 +474,32 @@ impl Ipv6Pool {
     pub fn len(&self) -> usize {
         let biggest = !self.mask + 1;
         biggest as usize
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum IpPool {
+    V4(Ipv4Pool),
+    V6(Ipv6Pool),
+}
+
+impl fmt::Display for IpPool {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let output = match self {
+            Self::V4(x) => format!("{}", x),
+            Self::V6(x) => format!("{}", x),
+        };
+        write!(f, "{}", output)
+    }
+}
+
+impl Iterator for IpPool {
+    type Item = IpAddr;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            IpPool::V4(iter) => iter.next().map(IpAddr::V4),
+            IpPool::V6(iter) => iter.next().map(IpAddr::V6),
+        }
     }
 }
 
