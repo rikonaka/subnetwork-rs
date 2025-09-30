@@ -118,6 +118,7 @@ pub struct Ipv4Pool {
     mask: u32,
     next: u32,
     stop: u32,
+    addr: u32,
 }
 
 impl Iterator for Ipv4Pool {
@@ -165,6 +166,7 @@ impl FromStr for Ipv4Pool {
                         mask,
                         next,
                         stop,
+                        addr,
                     });
                 }
             }
@@ -210,6 +212,7 @@ impl Ipv4Pool {
                 mask,
                 next,
                 stop,
+                addr,
             });
         }
     }
@@ -255,6 +258,10 @@ impl Ipv4Pool {
     pub fn len(&self) -> usize {
         let biggest = !self.mask + 1;
         biggest as usize
+    }
+    /// Represents a network-range address.
+    pub fn addr(&self) -> Ipv4Addr {
+        self.addr.into()
     }
 }
 
@@ -344,6 +351,7 @@ pub struct Ipv6Pool {
     mask: u128,
     next: u128,
     stop: u128,
+    addr: u128,
 }
 
 impl Iterator for Ipv6Pool {
@@ -391,6 +399,7 @@ impl FromStr for Ipv6Pool {
                         mask,
                         next,
                         stop,
+                        addr,
                     });
                 }
             }
@@ -436,6 +445,7 @@ impl Ipv6Pool {
                 mask,
                 next,
                 stop,
+                addr,
             })
         }
     }
@@ -474,6 +484,10 @@ impl Ipv6Pool {
     pub fn len(&self) -> usize {
         let biggest = !self.mask + 1;
         biggest as usize
+    }
+    /// Represents a network-range address.
+    pub fn addr(&self) -> Ipv6Addr {
+        self.addr.into()
     }
 }
 
