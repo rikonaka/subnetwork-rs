@@ -39,7 +39,7 @@ fn main() {
 
     assert_eq!(pool.len(), 256);
     // pool is copied
-    assert_eq!(pool.to_string(), "192.168.1.0/24, next 192.168.1.0");
+    assert_eq!(pool.to_string(), "192.168.1.0/24");
 }
 ```
 
