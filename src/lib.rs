@@ -1,4 +1,5 @@
 //! The `subnetwork` crate provides a set of APIs to work with IP CIDRs in Rust.
+use std::cmp::Ordering;
 use std::fmt;
 use std::net::AddrParseError;
 use std::net::IpAddr;
@@ -31,6 +32,36 @@ pub struct CrossIpv4Pool {
     start: u32,
     end: u32,
     next: u32,
+}
+
+impl PartialEq for CrossIpv4Pool {
+    fn eq(&self, other: &Self) -> bool {
+        self.start == other.start && self.end == other.end
+    }
+}
+
+impl PartialOrd for CrossIpv4Pool {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.start < other.start {
+            return Some(Ordering::Less);
+        } else if self.start > other.start {
+            return Some(Ordering::Greater);
+        }
+
+        if self.end < other.end {
+            return Some(Ordering::Less);
+        } else if self.end > other.end {
+            return Some(Ordering::Greater);
+        }
+
+        if self.next > other.next {
+            return Some(Ordering::Greater);
+        } else if self.next < other.next {
+            return Some(Ordering::Less);
+        }
+
+        Some(Ordering::Equal)
+    }
 }
 
 impl Iterator for CrossIpv4Pool {
@@ -119,6 +150,51 @@ pub struct Ipv4Pool {
     next: u32,
     stop: u32,
     addr: u32,
+}
+
+impl PartialEq for Ipv4Pool {
+    fn eq(&self, other: &Self) -> bool {
+        self.prefix == other.prefix
+            && self.mask == other.mask
+            && self.stop == other.stop
+            && self.addr == other.addr
+    }
+}
+
+impl PartialOrd for Ipv4Pool {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.prefix < other.prefix {
+            return Some(Ordering::Less);
+        } else if self.prefix > other.prefix {
+            return Some(Ordering::Greater);
+        }
+
+        if self.mask < other.mask {
+            return Some(Ordering::Less);
+        } else if self.mask > other.mask {
+            return Some(Ordering::Greater);
+        }
+
+        if self.stop < other.stop {
+            return Some(Ordering::Less);
+        } else if self.stop > other.stop {
+            return Some(Ordering::Greater);
+        }
+
+        if self.addr < other.addr {
+            return Some(Ordering::Less);
+        } else if self.addr > other.addr {
+            return Some(Ordering::Greater);
+        }
+
+        if self.next < other.next {
+            return Some(Ordering::Less);
+        } else if self.next > other.next {
+            return Some(Ordering::Greater);
+        }
+
+        Some(Ordering::Equal)
+    }
 }
 
 impl Iterator for Ipv4Pool {
@@ -272,6 +348,36 @@ pub struct CrossIpv6Pool {
     next: u128,
 }
 
+impl PartialEq for CrossIpv6Pool {
+    fn eq(&self, other: &Self) -> bool {
+        self.start == other.start && self.end == other.end
+    }
+}
+
+impl PartialOrd for CrossIpv6Pool {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.start < other.start {
+            return Some(Ordering::Less);
+        } else if self.start > other.start {
+            return Some(Ordering::Greater);
+        }
+
+        if self.end < other.end {
+            return Some(Ordering::Less);
+        } else if self.end > other.end {
+            return Some(Ordering::Greater);
+        }
+
+        if self.next < other.next {
+            return Some(Ordering::Less);
+        } else if self.next > other.next {
+            return Some(Ordering::Greater);
+        }
+
+        Some(Ordering::Equal)
+    }
+}
+
 impl Iterator for CrossIpv6Pool {
     type Item = Ipv6Addr;
     fn next(&mut self) -> Option<Self::Item> {
@@ -352,6 +458,51 @@ pub struct Ipv6Pool {
     next: u128,
     stop: u128,
     addr: u128,
+}
+
+impl PartialEq for Ipv6Pool {
+    fn eq(&self, other: &Self) -> bool {
+        self.prefix == other.prefix
+            && self.mask == other.mask
+            && self.stop == other.stop
+            && self.addr == other.addr
+    }
+}
+
+impl PartialOrd for Ipv6Pool {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.prefix < other.prefix {
+            return Some(Ordering::Less);
+        } else if self.prefix > other.prefix {
+            return Some(Ordering::Greater);
+        }
+
+        if self.mask < other.mask {
+            return Some(Ordering::Less);
+        } else if self.mask > other.mask {
+            return Some(Ordering::Greater);
+        }
+
+        if self.stop < other.stop {
+            return Some(Ordering::Less);
+        } else if self.stop > other.stop {
+            return Some(Ordering::Greater);
+        }
+
+        if self.addr < other.addr {
+            return Some(Ordering::Less);
+        } else if self.addr > other.addr {
+            return Some(Ordering::Greater);
+        }
+
+        if self.next < other.next {
+            return Some(Ordering::Less);
+        } else if self.next > other.next {
+            return Some(Ordering::Greater);
+        }
+
+        Some(Ordering::Equal)
+    }
 }
 
 impl Iterator for Ipv6Pool {
@@ -495,6 +646,26 @@ impl Ipv6Pool {
 pub enum IpPool {
     V4(Ipv4Pool),
     V6(Ipv6Pool),
+}
+
+impl PartialEq for IpPool {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::V4(x), Self::V4(y)) => x == y,
+            (Self::V6(x), Self::V6(y)) => x == y,
+            _ => false,
+        }
+    }
+}
+
+impl PartialOrd for IpPool {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (Self::V4(x), Self::V4(y)) => x.partial_cmp(y),
+            (Self::V6(x), Self::V6(y)) => x.partial_cmp(y),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for IpPool {
