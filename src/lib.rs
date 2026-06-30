@@ -828,6 +828,40 @@ impl Iterator for IpPool {
     }
 }
 
+impl IpPool {
+    pub fn contains(&self, addr: IpAddr) -> bool {
+        match (self, addr) {
+            (Self::V4(pool), IpAddr::V4(ip)) => pool.contain(ip),
+            (Self::V6(pool), IpAddr::V6(ip)) => pool.contain(ip),
+            _ => false,
+        }
+    }
+    pub fn to_vec(&self) -> Vec<IpAddr> {
+        match self {
+            Self::V4(pool) => pool.to_vec().into_iter().map(IpAddr::V4).collect(),
+            Self::V6(pool) => pool.to_vec().into_iter().map(IpAddr::V6).collect(),
+        }
+    }
+    pub fn len(&self) -> usize {
+        match self {
+            Self::V4(pool) => pool.len(),
+            Self::V6(pool) => pool.len(),
+        }
+    }
+    pub fn network(&self) -> IpAddr {
+        match self {
+            Self::V4(pool) => pool.network().into(),
+            Self::V6(pool) => pool.network().into(),
+        }
+    }
+    pub fn addr(&self) -> IpAddr {
+        match self {
+            Self::V4(pool) => pool.addr().into(),
+            Self::V6(pool) => pool.addr().into(),
+        }
+    }
+}
+
 /* Single Addr Struct */
 
 #[derive(Debug, Clone, Copy, Hash)]
