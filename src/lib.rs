@@ -290,7 +290,7 @@ impl fmt::Display for Ipv4Pool {
 impl FromStr for Ipv4Pool {
     type Err = SubnetworkError;
     fn from_str(addr: &str) -> Result<Self, Self::Err> {
-        if addr.containss("/") {
+        if addr.contains("/") {
             let addr_vec: Vec<&str> = addr.split("/").collect();
             if addr_vec.len() == 2 {
                 let ip_addr = Ipv4Addr::from_str(addr_vec[0])?;
