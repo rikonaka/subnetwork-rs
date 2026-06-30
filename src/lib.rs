@@ -153,8 +153,8 @@ impl CrossIpv4Pool {
     pub fn to_vec(&self) -> Vec<Ipv4Addr> {
         self.into_iter().collect()
     }
-    /// Check if ip pool contains this ip.
-    pub fn contain(&self, addr: Ipv4Addr) -> bool {
+    /// Check if ip pool containss this ip.
+    pub fn contains(&self, addr: Ipv4Addr) -> bool {
         let addr: u32 = addr.into();
         if addr <= self.end && addr >= self.start {
             true
@@ -290,7 +290,7 @@ impl fmt::Display for Ipv4Pool {
 impl FromStr for Ipv4Pool {
     type Err = SubnetworkError;
     fn from_str(addr: &str) -> Result<Self, Self::Err> {
-        if addr.contains("/") {
+        if addr.containss("/") {
             let addr_vec: Vec<&str> = addr.split("/").collect();
             if addr_vec.len() == 2 {
                 let ip_addr = Ipv4Addr::from_str(addr_vec[0])?;
@@ -319,7 +319,7 @@ impl FromStr for Ipv4Pool {
 }
 
 impl Ipv4Pool {
-    /// Returns an Ipv4 iterator over the address contained in the network.
+    /// Returns an Ipv4 iterator over the address containsed in the network.
     /// Include network address and broadcast address.
     /// # Example
     /// ```
@@ -360,7 +360,7 @@ impl Ipv4Pool {
     pub fn to_vec(&self) -> Vec<Ipv4Addr> {
         self.into_iter().collect()
     }
-    /// Check if ip pool contains this ip.
+    /// Check if ip pool containss this ip.
     /// # Example
     /// ```
     /// use std::net::Ipv4Addr;
@@ -370,11 +370,11 @@ impl Ipv4Pool {
     /// fn main() {
     ///     let pool = Ipv4Pool::from_str("192.168.1.0/24").unwrap();
     ///     let ip = Ipv4Addr::from_str("192.168.1.20").unwrap();
-    ///     let ret = pool.contain(ip);
+    ///     let ret = pool.contains(ip);
     ///     assert_eq!(ret, true);
     /// }
     /// ```
-    pub fn contain(&self, addr: Ipv4Addr) -> bool {
+    pub fn contains(&self, addr: Ipv4Addr) -> bool {
         let addr: u32 = addr.into();
         if addr & self.mask == self.prefix {
             true
@@ -525,8 +525,8 @@ impl CrossIpv6Pool {
     pub fn to_vec(&self) -> Vec<Ipv6Addr> {
         self.into_iter().collect()
     }
-    /// Check if ip pool contains this ip.
-    pub fn contain(&self, addr: Ipv6Addr) -> bool {
+    /// Check if ip pool containss this ip.
+    pub fn contains(&self, addr: Ipv6Addr) -> bool {
         let addr: u128 = addr.into();
         if addr <= self.end && addr >= self.start {
             true
@@ -691,7 +691,7 @@ impl FromStr for Ipv6Pool {
 }
 
 impl Ipv6Pool {
-    /// Returns an Ipv6 iterator over the address contained in the network.
+    /// Returns an Ipv6 iterator over the address containsed in the network.
     /// Include network address and broadcast address.
     /// # Example
     /// ```
@@ -732,7 +732,7 @@ impl Ipv6Pool {
     pub fn to_vec(&self) -> Vec<Ipv6Addr> {
         self.into_iter().collect()
     }
-    /// Check if ip pool contains this ip.
+    /// Check if ip pool containss this ip.
     /// # Example
     /// ```
     /// use std::net::Ipv6Addr;
@@ -742,11 +742,11 @@ impl Ipv6Pool {
     /// fn main() {
     ///     let pool = Ipv6Pool::from_str("::ffff:192.10.2.0/120").unwrap();
     ///     let ip = Ipv6Addr::from_str("::ffff:192.10.2.1").unwrap();
-    ///     let ret = pool.contain(ip);
+    ///     let ret = pool.contains(ip);
     ///     assert_eq!(ret, true);
     /// }
     /// ```
-    pub fn contain(&self, addr: Ipv6Addr) -> bool {
+    pub fn contains(&self, addr: Ipv6Addr) -> bool {
         let addr: u128 = addr.into();
         if addr & self.mask == self.prefix {
             true
@@ -829,10 +829,22 @@ impl Iterator for IpPool {
 }
 
 impl IpPool {
+    pub fn new(addr: IpAddr, prefix: u8) -> Result<Self, SubnetworkError> {
+        match addr {
+            IpAddr::V4(ipv4) => {
+                let pool = Ipv4Pool::new(ipv4, prefix)?;
+                Ok(IpPool::V4(pool))
+            }
+            IpAddr::V6(ipv6) => {
+                let pool = Ipv6Pool::new(ipv6, prefix)?;
+                Ok(IpPool::V6(pool))
+            }
+        }
+    }
     pub fn contains(&self, addr: IpAddr) -> bool {
         match (self, addr) {
-            (Self::V4(pool), IpAddr::V4(ip)) => pool.contain(ip),
-            (Self::V6(pool), IpAddr::V6(ip)) => pool.contain(ip),
+            (Self::V4(pool), IpAddr::V4(ip)) => pool.contains(ip),
+            (Self::V6(pool), IpAddr::V6(ip)) => pool.contains(ip),
             _ => false,
         }
     }
@@ -1187,7 +1199,7 @@ mod tests {
         }
 
         let test_ipv4 = Ipv4Addr::new(192, 168, 1, 233);
-        assert_eq!(pool.contain(test_ipv4), true);
+        assert_eq!(pool.contains(test_ipv4), true);
 
         let broadcast = Ipv4Addr::new(192, 168, 1, 255);
         assert_eq!(pool.broadcast(), broadcast);
@@ -1210,13 +1222,13 @@ mod tests {
         }
 
         let test_ipv4 = Ipv4Addr::new(192, 168, 1, 233);
-        assert_eq!(pool.contain(test_ipv4), true);
+        assert_eq!(pool.contains(test_ipv4), true);
         let test_ipv4 = Ipv4Addr::new(192, 168, 2, 0);
-        assert_eq!(pool.contain(test_ipv4), true);
+        assert_eq!(pool.contains(test_ipv4), true);
         let test_ipv4 = Ipv4Addr::new(192, 168, 3, 255);
-        assert_eq!(pool.contain(test_ipv4), false);
+        assert_eq!(pool.contains(test_ipv4), false);
         let test_ipv4 = Ipv4Addr::new(192, 168, 3, 200);
-        assert_eq!(pool.contain(test_ipv4), true);
+        assert_eq!(pool.contains(test_ipv4), true);
     }
     #[test]
     fn readme_example_3() {
