@@ -27,7 +27,7 @@ pub enum SubnetworkError {
     ParseIntError(#[from] ParseIntError),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct CrossIpv4Pool {
     start: u32,
     end: u32,
@@ -39,6 +39,8 @@ impl PartialEq for CrossIpv4Pool {
         self.start == other.start && self.end == other.end
     }
 }
+
+impl Eq for CrossIpv4Pool {}
 
 impl PartialOrd for CrossIpv4Pool {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
@@ -61,6 +63,30 @@ impl PartialOrd for CrossIpv4Pool {
         }
 
         Some(Ordering::Equal)
+    }
+}
+
+impl Ord for CrossIpv4Pool {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.start < other.start {
+            return Ordering::Less;
+        } else if self.start > other.start {
+            return Ordering::Greater;
+        }
+
+        if self.end < other.end {
+            return Ordering::Less;
+        } else if self.end > other.end {
+            return Ordering::Greater;
+        }
+
+        if self.next > other.next {
+            return Ordering::Greater;
+        } else if self.next < other.next {
+            return Ordering::Less;
+        }
+
+        Ordering::Equal
     }
 }
 
@@ -143,7 +169,7 @@ impl CrossIpv4Pool {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct Ipv4Pool {
     prefix: u32,
     mask: u32,
@@ -160,6 +186,8 @@ impl PartialEq for Ipv4Pool {
             && self.addr == other.addr
     }
 }
+
+impl Eq for Ipv4Pool {}
 
 impl PartialOrd for Ipv4Pool {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -194,6 +222,42 @@ impl PartialOrd for Ipv4Pool {
         }
 
         Some(Ordering::Equal)
+    }
+}
+
+impl Ord for Ipv4Pool {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.prefix < other.prefix {
+            return Ordering::Less;
+        } else if self.prefix > other.prefix {
+            return Ordering::Greater;
+        }
+
+        if self.mask < other.mask {
+            return Ordering::Less;
+        } else if self.mask > other.mask {
+            return Ordering::Greater;
+        }
+
+        if self.stop < other.stop {
+            return Ordering::Less;
+        } else if self.stop > other.stop {
+            return Ordering::Greater;
+        }
+
+        if self.addr < other.addr {
+            return Ordering::Less;
+        } else if self.addr > other.addr {
+            return Ordering::Greater;
+        }
+
+        if self.next < other.next {
+            return Ordering::Less;
+        } else if self.next > other.next {
+            return Ordering::Greater;
+        }
+
+        Ordering::Equal
     }
 }
 
@@ -341,7 +405,7 @@ impl Ipv4Pool {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct CrossIpv6Pool {
     start: u128,
     end: u128,
@@ -353,6 +417,8 @@ impl PartialEq for CrossIpv6Pool {
         self.start == other.start && self.end == other.end
     }
 }
+
+impl Eq for CrossIpv6Pool {}
 
 impl PartialOrd for CrossIpv6Pool {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -375,6 +441,30 @@ impl PartialOrd for CrossIpv6Pool {
         }
 
         Some(Ordering::Equal)
+    }
+}
+
+impl Ord for CrossIpv6Pool {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.start < other.start {
+            return Ordering::Less;
+        } else if self.start > other.start {
+            return Ordering::Greater;
+        }
+
+        if self.end < other.end {
+            return Ordering::Less;
+        } else if self.end > other.end {
+            return Ordering::Greater;
+        }
+
+        if self.next < other.next {
+            return Ordering::Less;
+        } else if self.next > other.next {
+            return Ordering::Greater;
+        }
+
+        Ordering::Equal
     }
 }
 
@@ -451,7 +541,7 @@ impl CrossIpv6Pool {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct Ipv6Pool {
     prefix: u128,
     mask: u128,
@@ -468,6 +558,8 @@ impl PartialEq for Ipv6Pool {
             && self.addr == other.addr
     }
 }
+
+impl Eq for Ipv6Pool {}
 
 impl PartialOrd for Ipv6Pool {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -502,6 +594,42 @@ impl PartialOrd for Ipv6Pool {
         }
 
         Some(Ordering::Equal)
+    }
+}
+
+impl Ord for Ipv6Pool {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.prefix < other.prefix {
+            return Ordering::Less;
+        } else if self.prefix > other.prefix {
+            return Ordering::Greater;
+        }
+
+        if self.mask < other.mask {
+            return Ordering::Less;
+        } else if self.mask > other.mask {
+            return Ordering::Greater;
+        }
+
+        if self.stop < other.stop {
+            return Ordering::Less;
+        } else if self.stop > other.stop {
+            return Ordering::Greater;
+        }
+
+        if self.addr < other.addr {
+            return Ordering::Less;
+        } else if self.addr > other.addr {
+            return Ordering::Greater;
+        }
+
+        if self.next < other.next {
+            return Ordering::Less;
+        } else if self.next > other.next {
+            return Ordering::Greater;
+        }
+
+        Ordering::Equal
     }
 }
 
@@ -642,7 +770,7 @@ impl Ipv6Pool {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub enum IpPool {
     V4(Ipv4Pool),
     V6(Ipv6Pool),
@@ -658,12 +786,24 @@ impl PartialEq for IpPool {
     }
 }
 
+impl Eq for IpPool {}
+
 impl PartialOrd for IpPool {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
             (Self::V4(x), Self::V4(y)) => x.partial_cmp(y),
             (Self::V6(x), Self::V6(y)) => x.partial_cmp(y),
             _ => None,
+        }
+    }
+}
+
+impl Ord for IpPool {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (Self::V4(x), Self::V4(y)) => x.cmp(y),
+            (Self::V6(x), Self::V6(y)) => x.cmp(y),
+            _ => Ordering::Equal,
         }
     }
 }
@@ -690,9 +830,29 @@ impl Iterator for IpPool {
 
 /* Single Addr Struct */
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct Ipv4AddrExt {
     addr: u32,
+}
+
+impl PartialEq for Ipv4AddrExt {
+    fn eq(&self, other: &Self) -> bool {
+        self.addr == other.addr
+    }
+}
+
+impl Eq for Ipv4AddrExt {}
+
+impl PartialOrd for Ipv4AddrExt {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.addr.partial_cmp(&other.addr)
+    }
+}
+
+impl Ord for Ipv4AddrExt {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.addr.cmp(&other.addr)
+    }
 }
 
 impl fmt::Display for Ipv4AddrExt {
@@ -766,9 +926,29 @@ impl Ipv4AddrExt {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash)]
 pub struct Ipv6AddrExt {
     addr: u128,
+}
+
+impl PartialEq for Ipv6AddrExt {
+    fn eq(&self, other: &Self) -> bool {
+        self.addr == other.addr
+    }
+}
+
+impl Eq for Ipv6AddrExt {}
+
+impl PartialOrd for Ipv6AddrExt {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.addr.partial_cmp(&other.addr)
+    }
+}
+
+impl Ord for Ipv6AddrExt {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.addr.cmp(&other.addr)
+    }
 }
 
 impl fmt::Display for Ipv6AddrExt {
