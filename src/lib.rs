@@ -403,6 +403,10 @@ impl Ipv4Pool {
     pub fn addr(&self) -> Ipv4Addr {
         self.addr.into()
     }
+    /// Returns the prefix of this `Ipv4Pool`.
+    pub fn prefix(&self) -> u32 {
+        self.prefix
+    }
 }
 
 #[derive(Debug, Clone, Copy, Hash)]
@@ -767,6 +771,10 @@ impl Ipv6Pool {
     /// Represents a network-range address.
     pub fn addr(&self) -> Ipv6Addr {
         self.addr.into()
+    }
+    /// Returns the prefix of this `Ipv6Pool`.
+    pub fn prefix(&self) -> u128 {
+        self.prefix
     }
 }
 
