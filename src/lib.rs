@@ -886,6 +886,14 @@ impl IpPool {
             Self::V6(pool) => pool.addr().into(),
         }
     }
+    /// Returns the prefix length of the `IpPool`.
+    /// Note: the prefix length is returned as a `u128` to avoid overflow with IPv4 prefix lengths.
+    pub fn prefix(&self) -> u128 {
+        match self {
+            Self::V4(pool) => pool.prefix() as u128,
+            Self::V6(pool) => pool.prefix(),
+        }
+    }
 }
 
 /* Single Addr Struct */
