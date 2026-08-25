@@ -837,6 +837,7 @@ impl Iterator for IpPool {
 }
 
 impl IpPool {
+    /// Creates a new `IpPool` from the given `IpAddr` and prefix length.
     pub fn new(addr: IpAddr, prefix: u8) -> Result<Self, SubnetworkError> {
         match addr {
             IpAddr::V4(ipv4) => {
@@ -849,6 +850,7 @@ impl IpPool {
             }
         }
     }
+    /// Returns `true` if the `IpPool` contains the given `IpAddr`.
     pub fn contains(&self, addr: IpAddr) -> bool {
         match (self, addr) {
             (Self::V4(pool), IpAddr::V4(ip)) => pool.contains(ip),
@@ -856,24 +858,28 @@ impl IpPool {
             _ => false,
         }
     }
+    /// Returns the number of IP addresses in the `IpPool`.
     pub fn to_vec(&self) -> Vec<IpAddr> {
         match self {
             Self::V4(pool) => pool.to_vec().into_iter().map(IpAddr::V4).collect(),
             Self::V6(pool) => pool.to_vec().into_iter().map(IpAddr::V6).collect(),
         }
     }
+    /// Returns the number of IP addresses in the `IpPool`.
     pub fn len(&self) -> usize {
         match self {
             Self::V4(pool) => pool.len(),
             Self::V6(pool) => pool.len(),
         }
     }
+    /// Returns the network address of the `IpPool`.
     pub fn network(&self) -> IpAddr {
         match self {
             Self::V4(pool) => pool.network().into(),
             Self::V6(pool) => pool.network().into(),
         }
     }
+    /// Returns the first IP address of the `IpPool`.
     pub fn addr(&self) -> IpAddr {
         match self {
             Self::V4(pool) => pool.addr().into(),
@@ -1085,6 +1091,7 @@ impl Ipv6AddrExt {
         let mask_u128: u128 = mask.into();
         (site_u128 + (mask_u128 & self.addr)).into()
     }
+    /// Returns the largest identical prefix length between this `Ipv6` and the given `Ipv6`.
     pub fn largest_identical_prefix<T: Into<Ipv6AddrExt>>(&self, target: T) -> u8 {
         let a = self.addr;
         let b = target.into().addr;
